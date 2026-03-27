@@ -2,32 +2,84 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Mail, ArrowRight, ShieldCheck, Sparkles, Loader2 } from 'lucide-react';
+import { Mail, ArrowRight, ShieldCheck, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [step, setStep] = useState<'input' | 'otp'>('input');
-  const [inputValue, setInputValue] = useState('');
-  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState('');
+  const [otpValues, setOtpValues] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email) return;
+    
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      
       setStep('otp');
-    }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    const otpString = otpValues.join('');
+    if (otpString.length !== 4) {
+        setErrorMsg('Please enter a valid 4-digit OTP');
+        return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: otpString })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Invalid OTP');
+      
+      localStorage.setItem('moonGlowToken', data.token);
+      localStorage.setItem('moonGlowRole', data.role);
+      
       router.push('/dashboard');
-    }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value[value.length - 1]; // allow only 1 char
+    const newValues = [...otpValues];
+    newValues[index] = value;
+    setOtpValues(newValues);
+    
+    // Auto focus next
+    if (value && index < 3) {
+      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
+      if (nextInput) nextInput.focus();
+    }
   };
 
   return (
@@ -44,8 +96,14 @@ export default function LoginPage() {
             <Sparkles className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-playfair)' }}>Welcome Back</h1>
-          <p className="text-gray-400 text-sm">Sign in to access your curated collection.</p>
+          <p className="text-gray-400 text-sm">Sign in securely with your Email.</p>
         </div>
+
+        {errorMsg && (
+            <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-6 bg-red-500/10 border border-red-500/50 text-red-400 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4"/> {errorMsg}
+            </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {step === 'input' && (
@@ -56,24 +114,17 @@ export default function LoginPage() {
               exit={{ opacity: 0, x: 20 }}
               onSubmit={handleSendOtp}
             >
-              <div className="flex bg-white/5 rounded-xl p-1 mb-6 border border-white/10">
-                <button type="button" onClick={() => {setMethod('phone'); setInputValue('')}} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${method === 'phone' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'}`}>Phone</button>
-                <button type="button" onClick={() => {setMethod('email'); setInputValue('')}} className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${method === 'email' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'}`}>Email</button>
-              </div>
-
               <div className="mb-6">
                 <label className="text-xs text-yellow-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
-                  {method === 'phone' ? <Phone className="w-4 h-4"/> : <Mail className="w-4 h-4"/>} 
-                  {method === 'phone' ? 'Phone Number' : 'Email Address'}
+                  <Mail className="w-4 h-4"/> Email Address
                 </label>
                 <div className="relative">
-                  {method === 'phone' && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">+91</span>}
                   <input 
-                    type={method === 'phone' ? 'tel' : 'email'} 
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder={method === 'phone' ? '98765 43210' : 'name@example.com'}
-                    className={`w-full bg-white/5 border border-white/10 rounded-xl py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors ${method === 'phone' ? 'pl-14 pr-4' : 'px-4'}`}
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-yellow-500 transition-colors"
                     required 
                   />
                 </div>
@@ -99,24 +150,21 @@ export default function LoginPage() {
             >
               <div className="text-center mb-6">
                 <p className="text-gray-300 mb-1">Enter the 4-digit code sent to</p>
-                <p className="text-yellow-400 font-bold">{method === 'phone' ? `+91 ${inputValue}` : inputValue}</p>
-                <button type="button" onClick={() => setStep('input')} className="text-xs text-gray-500 hover:text-white underline mt-2">Change {method}</button>
+                <p className="text-yellow-400 font-bold">{email}</p>
+                <button type="button" onClick={() => setStep('input')} className="text-xs text-gray-500 hover:text-white underline mt-2">Change Email</button>
               </div>
 
               <div className="mb-8 flex justify-center gap-3">
-                {[1, 2, 3, 4].map((i) => (
+                {[0, 1, 2, 3].map((index) => (
                   <input 
-                    key={i}
+                    key={index}
+                    id={`otp-${index}`}
                     type="text" 
                     maxLength={1}
+                    value={otpValues[index]}
                     className="w-14 h-14 bg-white/5 border border-white/10 rounded-xl text-center text-2xl text-white font-bold focus:outline-none focus:border-yellow-500 focus:bg-white/10 transition-colors"
                     required
-                    onChange={(e) => {
-                      if(e.target.value) {
-                        const next = e.target.nextElementSibling as HTMLInputElement;
-                        if(next) next.focus();
-                      }
-                    }}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
                   />
                 ))}
               </div>
