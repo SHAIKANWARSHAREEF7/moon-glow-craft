@@ -7,6 +7,15 @@ import { motion } from 'framer-motion';
 import { ShoppingBag, ArrowLeft, Star, ShieldCheck, Leaf } from 'lucide-react';
 import { useState } from 'react';
 
+export function generateStaticParams() {
+  return [
+    { id: '1' },
+    { id: '2' },
+    { id: '3' },
+    { id: '4' }
+  ];
+}
+
 export default function ProductDetails() {
   const { id } = useParams();
   const router = useRouter();
