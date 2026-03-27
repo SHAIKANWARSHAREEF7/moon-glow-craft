@@ -8,7 +8,7 @@ export default function Navbar() {
   const items = useCartStore((state) => state.items);
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  const navVariants = {
+  const navVariants: any = {
     hidden: { y: -100, opacity: 0 },
     visible: { 
       y: 0, opacity: 1, 
@@ -16,7 +16,7 @@ export default function Navbar() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { y: -20, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { type: "spring" } }
   };
