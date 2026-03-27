@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  DRIVER
+}
+
+enum Category {
+  CHOCOLATE
+  KEYCHAIN
+  WALLMOON
+  THREAD_ART
+  OTHER
+}
+
+enum OrderStatus {
+  PLACED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  UPI
+  CARD
+  CASH_ON_DELIVERY
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders     Order[]
+  deliveries Delivery[]
+}
+
+model Product {
+  id             String   @id @default(uuid())
+  title          String
+  description    String?
+  price          Float
+  inventoryCount Int      @default(0)
+  imageUrl       String?
+  category       Category @default(OTHER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  customerId    String
+  customer      User          @relation(fields: [customerId], references: [id])
+  totalAmount   Float
+  status        OrderStatus   @default(PLACED)
+  paymentMethod PaymentMethod @default(RAZORPAY)
+  shippingAddress String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items    OrderItem[]
+  delivery Delivery?
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model Delivery {
+  id          String   @id @default(uuid())
+  orderId     String   @unique
+  order       Order    @relation(fields: [orderId], references: [id])
+  driverId    String?
+  driver      User?    @relation(fields: [driverId], references: [id])
+  status      String   @default("Pending Assignment") // e.g., "Picked Up", "Arrived", "Delivered"
+  assignedAt  DateTime?
+  deliveredAt DateTime?
+}

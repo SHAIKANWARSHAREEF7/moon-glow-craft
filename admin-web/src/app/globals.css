@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-admin-base: #1e293b;
+  --color-admin-dark: #0f172a;
+  --color-admin-accent: #3b82f6;
+}
+
+@layer utilities {
+  .admin-card {
+    @apply bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-md p-6;
+  }
+}
+
+html, body {
+  @apply bg-admin-dark text-gray-200 min-h-screen selection:bg-admin-accent/30 selection:text-white font-sans;
+}
