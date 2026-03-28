@@ -32,5 +32,21 @@ export const products: Product[] = [
         price: 2499,
         imageUrl: '/images/thread_art.png',
         category: 'THREAD_ART'
+    },
+    {
+        id: '5',
+        title: 'Premium Kunafa Chocolate (Heart)',
+        description: 'Luxurious Kunafa chocolate shaped in a beautiful heart style. The perfect blend of traditional Middle Eastern flavors and premium Swiss chocolate.',
+        price: 250,
+        imageUrl: '/images/kunafa_heart.png',
+        category: 'CHOCOLATE'
+    },
+    {
+        id: '6',
+        title: 'Signature Kunafa Chocolate (Rectangle)',
+        description: 'Our signature Kunafa chocolate bar in a classic rectangle shape. Rich, crunchy, and absolutely delicious.',
+        price: 400,
+        imageUrl: '/images/kunafa_rect.png',
+        category: 'CHOCOLATE'
     }
 ];

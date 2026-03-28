@@ -21,6 +21,7 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMsg('');
     try {
+      console.log('Attempting to send OTP to:', email);
       const res = await fetch(`${API_URL}/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,12 +29,19 @@ export default function LoginPage() {
       });
       const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send OTP');
+      }
       
-      setStep('otp');
+      console.log('OTP Success Response:', data);
+      // Wait a tiny bit to ensure the transition is smooth
+      setTimeout(() => {
+        setStep('otp');
+        setLoading(false);
+      }, 500);
     } catch (err: any) {
-      setErrorMsg(err.message);
-    } finally {
+      console.error('CRITICAL: handleSendOtp Failed', err);
+      setErrorMsg(err.message || 'Network error occurred');
       setLoading(false);
     }
   };

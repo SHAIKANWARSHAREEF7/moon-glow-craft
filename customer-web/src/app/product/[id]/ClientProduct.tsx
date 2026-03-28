@@ -14,6 +14,8 @@ export default function ProductDetails() {
   const product = products.find(p => p.id === id);
   const addItem = useCartStore(state => state.addItem);
   const [isAdded, setIsAdded] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('30cm');
+  const [selectedStyle, setSelectedStyle] = useState('Heart Style');
 
   if (!product) {
     return (
@@ -79,7 +81,7 @@ export default function ProductDetails() {
             Crafted with passion, this piece tells a story of exquisite artistry. The meticulous attention to detail and premium materials ensure that you own not just a product, but a piece of our master artisan's heart.
           </p>
 
-          <div className="flex gap-6 mb-10 text-sm text-gray-400">
+          <div className="flex gap-6 mb-8 text-sm text-gray-400">
             <div className="flex items-center gap-2 glass px-4 py-2 rounded-xl">
               <ShieldCheck className="w-5 h-5 text-yellow-400" /> Premium Quality
             </div>
@@ -87,6 +89,55 @@ export default function ProductDetails() {
               <Leaf className="w-5 h-5 text-green-400" /> Eco-friendly
             </div>
           </div>
+
+          {/* Customization Options */}
+          {product.category === 'THREAD_ART' && (
+            <div className="mb-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div>
+                <label className="block text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4">Select Board Size</label>
+                <div className="flex gap-4">
+                  {['30cm', '40cm', '50cm'].map(size => (
+                    <button 
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`flex-1 py-3 rounded-xl border transition-all ${selectedSize === size ? 'bg-yellow-500 text-black border-yellow-500 font-bold' : 'border-white/10 text-gray-400 hover:border-yellow-500/50'}`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4">Upload Your Photo</label>
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:bg-white/5 transition-colors group">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-8 h-8 mb-4 text-gray-400 group-hover:text-yellow-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Click to upload or drag and drop</p>
+                  </div>
+                  <input type="file" className="hidden" />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {product.title.includes('Kunafa') && (
+            <div className="mb-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div>
+                <label className="block text-sm font-bold text-yellow-400 uppercase tracking-widest mb-4">Choose Chocolate Style</label>
+                <div className="flex gap-4">
+                  {['Heart Style', 'Rectangle Shape'].map(style => (
+                    <button 
+                      key={style}
+                      onClick={() => setSelectedStyle(style)}
+                      className={`flex-1 py-3 rounded-xl border transition-all ${selectedStyle === style ? 'bg-yellow-500 text-black border-yellow-500 font-bold' : 'border-white/10 text-gray-400 hover:border-yellow-500/50'}`}
+                    >
+                      {style}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between mb-8 pb-8 border-b border-white/10">
             <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500">

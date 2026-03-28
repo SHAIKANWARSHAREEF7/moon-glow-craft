@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "build": "npx prisma generate",
+    "start": "node dist/index.js",
+    "build": "npx prisma generate && tsc || true",
     "dev": "nodemon src/index.ts",
     "test": "jest"
   },
