@@ -98,7 +98,7 @@ router.get('/', authenticate, authorizeRole(['ADMIN']), async (req: Request, res
 router.put('/:id/assign', authenticate, authorizeRole(['ADMIN']), async (req: Request, res: Response) => {
     try {
         const { driverId } = req.body;
-        const orderId = req.params.id as string;
+        const orderId = String(req.params.id);
 
         const delivery = await prisma.delivery.update({
             where: { orderId: orderId },

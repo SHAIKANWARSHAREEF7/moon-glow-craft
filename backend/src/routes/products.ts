@@ -7,7 +7,7 @@ const router = Router();
 // Get all products (Public)
 router.get('/', async (req: Request, res: Response) => {
     try {
-        const category = req.query.category as string;
+        const category = req.query.category ? String(req.query.category) : undefined;
         const filter = category ? { category: category as any } : {};
         const products = await prisma.product.findMany({ where: filter });
         res.json(products);
@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
     try {
         const product = await prisma.product.findUnique({
-            where: { id: req.params.id as string }
+            where: { id: String(req.params.id) }
         });
         if (!product) return res.status(404).json({ error: 'Product not found' });
         res.json(product);
@@ -48,7 +48,7 @@ router.put('/:id', authenticate, authorizeRole(['ADMIN']), async (req: Request, 
     try {
         const { title, description, price, inventoryCount, imageUrl, category } = req.body;
         const product = await prisma.product.update({
-            where: { id: req.params.id as string },
+            where: { id: String(req.params.id) },
             data: { title, description, price, inventoryCount, imageUrl, category }
         });
         res.json(product);
