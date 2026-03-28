@@ -1,115 +1,190 @@
 "use client"
-import Image from "next/image";
-import { MoveRight } from "lucide-react";
-import ProductCard from "@/components/ProductCard";
-import { products } from "@/data/products";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { Sparkles, Moon, ShoppingBag, ArrowRight, Star, Heart, Clock, ShieldCheck, ChevronRight, Search } from 'lucide-react';
+import Link from 'next/link';
+import { products } from '@/data/products';
+import ProductCard from '@/components/ProductCard';
+import { useState } from 'react';
 
 export default function Home() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const yBg = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   
-  const categories = [
-    { name: 'Chocolates', icon: '🍫', count: '12+ Types' },
-    { name: 'Thread Art', icon: '🧵', count: 'Customizable' },
-    { name: 'Keychains', icon: '🔑', count: 'Handmade' },
-    { name: 'Wall Moon', icon: '🌙', count: 'Premium' },
-  ];
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categories = ['ALL', 'CHOCOLATE', 'KEYCHAIN', 'WALLMOON', 'THREAD_ART'];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
 
   return (
-    <div className="w-full flex-col flex items-center relative overflow-hidden bg-[#050505]">
-      {/* Search & Promo Header */}
-      <div className="w-full h-12 bg-gradient-to-r from-yellow-600 to-yellow-400 flex items-center justify-center overflow-hidden relative">
-        <motion.p 
-          animate={{ x: [400, -400] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="text-black font-bold text-sm whitespace-nowrap"
-        >
-          ✨ GET 20% OFF ON YOUR FIRST THREAD ART ORDER! USE CODE: MOONGLOW20 ✨ FREE DELIVERY ON ORDERS ABOVE ₹999! ✨
-        </motion.p>
-      </div>
+    <div className="min-h-screen bg-[#0a0a0a] overflow-x-hidden">
+      {/* Artisan Hero Section */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-[#0a0a0a]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-400/10 rounded-full blur-[120px] animate-pulse" />
+        </motion.div>
 
-      {/* Main Hero Section */}
-      <section ref={ref} className="w-full max-w-7xl mx-auto px-6 py-24 min-h-[85vh] flex flex-col items-center justify-center text-center relative">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="z-10"
-        >
-          <span className="bg-yellow-500/10 text-yellow-400 px-4 py-2 rounded-full text-xs font-bold tracking-[0.2em] mb-6 inline-block border border-yellow-500/20">ESTABLISHED 2024</span>
-          <h1 className="text-6xl md:text-9xl font-black text-white mb-8 tracking-tighter" style={{ fontFamily: 'var(--font-playfair)' }}>
-            Elevate Your <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-500 to-yellow-600">Soul's Space</span>
-          </h1>
-          
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto w-full mb-12 relative group">
-            <div className="absolute inset-0 bg-yellow-500/20 blur-xl group-hover:bg-yellow-500/30 transition-all rounded-full"></div>
-            <div className="relative flex items-center bg-[#1A1A1A] border border-white/10 rounded-full p-2 pl-6 focus-within:border-yellow-500/50 transition-all">
-              <input 
-                type="text" 
-                placeholder="Search for thread art, chocolates, keychains..." 
-                className="bg-transparent w-full text-white outline-none placeholder:text-gray-600"
-              />
-              <button className="bg-yellow-500 text-black px-8 py-3 rounded-full font-bold hover:bg-yellow-400 active:scale-95 transition-all">Search</button>
+        <div className="container mx-auto px-4 z-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+              <span className="text-yellow-400 text-xs font-bold tracking-[0.2em] uppercase">Handcrafted with Love</span>
             </div>
-          </div>
+            <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tighter" style={{ fontFamily: 'var(--font-playfair)' }}>
+              Moon Glow <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-500 to-yellow-200">Craft</span>
+            </h1>
+            <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+              Discover a world of celestial beauty and handcrafted elegance. From glowing wall art to artisan chocolates, every piece tells a story.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/products" className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                Shop Collection <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="#featured" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full border border-white/10 transition-all backdrop-blur-sm">
+                View Gallery
+              </Link>
+            </div>
+          </motion.div>
+        </div>
 
-          <div className="flex flex-wrap justify-center gap-6">
-            {categories.map((cat, i) => (
-              <motion.div 
-                key={cat.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 + 0.5 }}
-                className="glass px-6 py-4 rounded-3xl border border-white/5 hover:border-yellow-500/30 transition-colors cursor-pointer text-left w-44"
-              >
-                <span className="text-3xl mb-3 block">{cat.icon}</span>
-                <p className="text-white font-bold text-sm mb-1">{cat.name}</p>
-                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-widest">{cat.count}</p>
-              </motion.div>
-            ))}
+        <motion.div 
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/30"
+        >
+          <div className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center p-1">
+            <div className="w-1 h-2 bg-yellow-500 rounded-full" />
           </div>
         </motion.div>
       </section>
 
-      {/* Featured Masterpieces */}
-      <section className="w-full max-w-7xl mx-auto px-6 py-32">
-        <div className="flex justify-between items-end mb-12">
-          <div>
-            <span className="text-yellow-500 font-bold text-xs tracking-widest uppercase mb-2 block">Our Finest Curations</span>
-            <h2 className="text-4xl md:text-5xl font-bold text-white" style={{ fontFamily: 'var(--font-playfair)' }}>Handcrafted Marvels</h2>
-          </div>
-          <button className="text-yellow-500 font-bold hover:underline underline-offset-8 flex items-center gap-2">View All Gallery <MoveRight/></button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      {/* Promo Banner Section */}
-      <section className="w-full max-w-7xl mx-auto px-6 mb-32">
-        <div className="w-full h-80 bg-gradient-to-br from-yellow-600 to-yellow-800 rounded-[3rem] p-12 flex flex-col md:flex-row items-center justify-between relative overflow-hidden shadow-2xl shadow-yellow-900/20">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 animate-pulse"></div>
-          <div className="z-10 text-center md:text-left">
-            <h3 className="text-3xl md:text-5xl font-black text-black mb-4">Custom Thread Art</h3>
-            <p className="text-yellow-950 font-bold text-lg mb-8 max-w-md">Upload your favorite memories and watch them come to life in gold & silver strings.</p>
-            <button className="bg-black text-white px-10 py-4 rounded-full font-bold hover:bg-white hover:text-black transition-all">Start Custom Order</button>
-          </div>
-          <div className="mt-8 md:mt-0 z-10">
-            <div className="w-48 h-48 bg-black/10 backdrop-blur-sm border border-white/20 rounded-3xl flex flex-col items-center justify-center p-6 text-center transform rotate-6 hover:rotate-0 transition-transform">
-              <span className="text-5xl font-black text-white mb-2">₹1999</span>
-              <span className="text-black font-bold text-xs uppercase tracking-widest">Base Price</span>
+      {/* Search & Category Filter */}
+      <section className="py-12 bg-[#0a0a0a] sticky top-0 z-40 backdrop-blur-md border-b border-white/5">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <input 
+                type="text" 
+                placeholder="Search for magic..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-yellow-500 transition-all"
+              />
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar w-full md:w-auto">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-6 py-2 rounded-full text-xs font-bold tracking-widest transition-all whitespace-nowrap ${
+                    selectedCategory === cat ? 'bg-yellow-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </section>
+
+      {/* Featured Products */}
+      <section id="featured" className="py-24 container mx-auto px-4">
+        <div className="flex flex-col items-center mb-16 text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="mb-4"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'var(--font-playfair)' }}>Artisan Collection</h2>
+            <motion.div 
+              initial={{ width: 0 }}
+              whileInView={{ width: 100 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="h-1 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.8)] mx-auto" 
+            />
+          </motion.div>
+        </div>
+
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
+        >
+          {filteredProducts.map((product) => (
+            <motion.div 
+              key={product.id}
+              variants={{
+                hidden: { opacity: 0, y: 50, scale: 0.9 },
+                show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100 } }
+              }}
+            >
+              <ProductCard product={product} />
+            </motion.div>
+          ))}
+          {filteredProducts.length === 0 && (
+             <div className="col-span-full py-20 text-center">
+                <p className="text-gray-500 text-lg">No magical items found in this section.</p>
+             </div>
+          )}
+        </motion.div>
+      </section>
+
+      {/* Artisan Values */}
+      <section className="py-24 border-t border-white/5">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+             <div className="space-y-4">
+               <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                 <ShieldCheck className="w-8 h-8 text-yellow-500" />
+               </div>
+               <h3 className="text-xl font-bold text-white">Ethically Sourced</h3>
+               <p className="text-gray-400 text-sm leading-relaxed">We prioritize premium, sustainable materials for every handcrafted piece.</p>
+             </div>
+             <div className="space-y-4">
+               <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                 <Clock className="w-8 h-8 text-blue-400" />
+               </div>
+               <h3 className="text-xl font-bold text-white">Timed To Perfection</h3>
+               <p className="text-gray-400 text-sm leading-relaxed">From resin curing to chocolate tempering, we respect the time art takes.</p>
+             </div>
+             <div className="space-y-4">
+               <div className="w-16 h-16 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                 <Heart className="w-8 h-8 text-pink-500" />
+               </div>
+               <h3 className="text-xl font-bold text-white">Made with Passion</h3>
+               <p className="text-gray-400 text-sm leading-relaxed">Each Moon Glow product is a piece of our heart delivered to yours.</p>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Decorative Moon Background */}
+      <div className="fixed top-0 right-0 -z-10 translate-x-1/3 -translate-y-1/3 w-[800px] h-[800px] border border-white/5 rounded-full blur-sm opacity-20 pointer-events-none" />
     </div>
   );
 }
-

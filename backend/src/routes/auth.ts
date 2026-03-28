@@ -81,17 +81,9 @@ router.post('/send-otp', async (req: Request, res: Response) => {
         const otp = generateOTP();
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        let user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-            // Auto-register mock user for OTP-only flow
-            user = await prisma.user.create({
-                data: {
-                    email,
-                    name: email.split('@')[0],
-                    password: 'OTP_LOGIN_NO_PASSWORD',
-                    role: 'CUSTOMER'
-                }
-            });
+            return res.status(404).json({ error: 'User not found. Please register first or use an original email.' });
         }
 
         await prisma.user.update({
