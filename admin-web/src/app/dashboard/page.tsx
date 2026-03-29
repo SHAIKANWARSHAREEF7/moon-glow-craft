@@ -1,5 +1,6 @@
 "use client"
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, ShoppingCart, Truck, Package, AreaChart, Bell, ArrowRightLeft, Search, PlusCircle, Edit3, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
@@ -7,6 +8,7 @@ import { useEffect } from 'react';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -20,7 +22,7 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       const token = localStorage.getItem('moonGlowToken');
       if (!token) {
-        window.location.href = '/';
+        router.push('/');
         return;
       }
 
@@ -299,7 +301,7 @@ export default function AdminDashboard() {
                        </td>
                        <td className="py-5 text-right">
                           {o.driver === 'Unassigned' ? (
-                            <button onClick={() => handleAssignDriver(o.id)} className="px-5 py-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-xs uppercase tracking-widest font-black rounded-lg transition-colors border border-red-500/30">Action Required</button>
+                             <button onClick={() => setActiveTab('overview')} className="px-5 py-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-xs uppercase tracking-widest font-black rounded-lg transition-colors border border-red-500/30">Action Required</button>
                           ) : (
                             <span className="text-blue-400 font-bold text-[10px] uppercase tracking-widest bg-blue-500/10 px-3 py-1.5 rounded">{o.driver} Tracking Live</span>
                           )}

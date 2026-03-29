@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Phone, CheckCircle2, Navigation2, ScanLine, DollarSign, Store, KeyRound, Bike, Loader2 } from 'lucide-react';
 
@@ -7,6 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onre
 import Head from 'next/head';
 
 export default function DeliveryTasks() {
+  const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
@@ -17,7 +19,7 @@ export default function DeliveryTasks() {
   const fetchTasks = async () => {
     const token = localStorage.getItem('moonGlowToken');
     if (!token) {
-      window.location.href = '/';
+      router.push('/');
       return;
     }
     try {
