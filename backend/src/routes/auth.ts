@@ -152,4 +152,16 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
     }
 });
 
+router.get('/drivers', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const drivers = await prisma.user.findMany({
+            where: { role: 'DRIVER' },
+            select: { id: true, name: true, email: true }
+        });
+        res.json(drivers);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch drivers' });
+    }
+});
+
 export default router;

@@ -29,7 +29,7 @@ router.get('/my-tasks', authenticate, authorizeRole(['DRIVER']), async (req: Aut
 // Allowed statuses: Picked Up, Arrived, Delivered
 router.put('/:id/status', authenticate, authorizeRole(['DRIVER', 'ADMIN']), async (req: AuthRequest, res: Response) => {
     try {
-        const deliveryId = req.params.id;
+        const deliveryId = req.params.id as string;
         const { status } = req.body;
 
         if (!['Picked Up', 'Arrived', 'Delivered'].includes(status)) {

@@ -1,38 +1,31 @@
-# 🛠️ Moon Glow Craft - Manual Troubleshooting Guide
+# 🛠️ Moon Glow Craft - Final Setup & Manual Fixes
 
-Follow these steps if you see "Failed" or "Page Not Found" on your live websites.
+I have updated the code to connect all 3 apps to the real backend. Follow these steps to get everything live and clear the "Paused" message.
 
-## 1. 🚀 Render (Backend) - Fixing "Failed" Errors
-If Render says "Failed" during deploy, check these settings in your Render Dashboard:
+## 1. 🛑 Fixing "Project has been paused" (URGENT)
+This is coming from your Database provider, **Neon**.
+1. Log in to [Neon Dashboard](https://console.neon.tech/).
+2. Find your project and click the **"Resume"** or **"Active"** button. 
+3. The database will wake up in 2-3 seconds.
 
-1. **Build Command:** `npm install && npm run build`
-2. **Start Command:** `node dist/index.js`
-3. **Environment Variables:** Make sure you have added these:
-   - `DATABASE_URL` (From Neon)
-   - `EMAIL_USER` (Your Gmail)
-   - `EMAIL_PASS` (Your Gmail App Password)
-   - `JWT_SECRET` (Any long random string)
-   - `PORT` (5000)
+## 2. 🚀 Deploying the New Fixes
+I have fixed the code for **OTP Login**, **Admin Dashboard**, and the **Netlify 404 error**. To see these changes on your website:
+1. Go to your **Netlify Dashboard**.
+2. Trigger a **New Deploy** or push the latest code from your computer using `git push` if you have it connected.
+3. Make sure the Environment Variable `NEXT_PUBLIC_API_URL` is set to `https://moon-glow-craft.onrender.com/api` in your Netlify settings.
 
-> [!TIP]
-> **Checking Logs:** Go to the "Logs" tab in Render. If you see "dist/index.js not found", it means the build failed. I am now fixing the code to make sure the build succeeds.
+## 3. 🌐 Fixing "404 Not Found" on Refresh
+I have added `trailingSlash: true` to your Next.js configuration. This means:
+- If you refresh a page like `/dashboard`, it will now work correctly!
+- Ensure that in Netlify, your **Publish Directory** is set to `.next/out` or just `out` (for static export).
 
-## 2. 🌐 Netlify (Frontend) - Fixing "Page Not Found / 404"
-If you refresh the page and see "404", follow this:
-
-1. **Check for `_redirects` file:** I have added a file called `public/_redirects` with the text `/* /index.html 200`. 
-2. **Settings in Netlify:**
-   - **Build Command:** `npm run build`
-   - **Publish Directory:** `customer-web/.next` (for Next.js) or `dist` (for Vite).
-   - **Environment Variables:** Add `NEXT_PUBLIC_API_URL` pointing to your Render backend link.
-
-## 3. 🛡️ Security (OTP Login)
-- **Email Only:** From now on, you MUST check your email for the OTP. I have disabled the "Dev Code" for safety. Any "fake" OTP will now show an "Invalid OTP" error.
-
-## 4. 🖼️ Images Not Showing?
-- If images (Kunafa, Thread Art) are missing, clear your browser cache (Ctrl + Shift + R) or open in Incognito/Private mode. The new images are now in the `public/images` folder.
+## 4. 🔑 Real-Time Testing
+- **Admin**: Log in and you will now see **real orders** that customers have placed.
+- **Delivery**: Driver accounts can now see their **assigned tasks** and update delivery status. 
+- **Tracking**: Customers will see the progress bar move as the driver updates the status live.
 
 ---
 
-### Need more help?
-Send me the **Logs** from Render if it still says "Failed" after my next update.
+### Need Help?
+Check the **Logs** in your Render and Netlify dashboards. If you see an error, send me the log text!
+

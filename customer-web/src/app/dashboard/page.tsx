@@ -3,55 +3,51 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { io } from 'socket.io-client';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
 import Image from 'next/image';
-
-const MOCK_ORDER = {
-  id: 'order_123',
-  createdAt: new Date().toLocaleDateString(),
-  items: [
-    { title: 'Artisan Chocolate Truffles', qty: 2, image: '/images/chocolate.png' },
-    { title: 'Stardust Resin Keychain', qty: 1, image: '/images/keychain.png' }
-  ],
-  total: 2947.64, // ( (999 * 2) + 499 ) * 1.18
-};
+import { useRouter } from 'next/navigation';
 
 const STATUS_STAGES = [
-  { key: 'PLACED', label: 'Order Placed', icon: Clock },
+  { key: 'PENDING', label: 'Order Placed', icon: Clock },
   { key: 'PREPARING', label: 'Preparing', icon: Package },
   { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: Truck },
   { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
 ];
 
 export default function DashboardPage() {
-  const [status, setStatus] = useState('PLACED');
+  const router = useRouter();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Attempt connecting to the real backend socket.io instance
-    const socket = io('http://localhost:5000');
-
-    socket.on('connect', () => {
-      console.log('Connected to Moon Glow delivery tracking');
-      socket.emit('join_order_room', '123');
-    });
-
-    socket.on('orderStatusUpdated', (data: { orderId: string, status: string }) => {
-      if (data.orderId === '123') {
-        setStatus(data.status);
+    const fetchOrders = async () => {
+      const token = localStorage.getItem('moonGlowToken');
+      if (!token) {
+        router.push('/login');
+        return;
       }
-    });
 
-    // We will simulate the live tracking for the sake of the beautiful presentation if no backend is running
-    const timer1 = setTimeout(() => setStatus('PREPARING'), 5000);
-    const timer2 = setTimeout(() => setStatus('OUT_FOR_DELIVERY'), 10000);
-    const timer3 = setTimeout(() => setStatus('DELIVERED'), 15000);
-
-    return () => {
-      socket.disconnect();
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
+      try {
+        const res = await fetch(`${API_URL}/orders/my-orders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) setOrders(data);
+      } catch (error) {
+        console.error('Fetch orders error:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-  }, []);
+
+    fetchOrders();
+    // Real-time updates via polling (fallback for Socket.io)
+    const interval = setInterval(fetchOrders, 10000);
+    return () => clearInterval(interval);
+  }, [router]);
+
+  const activeOrder = orders[0]; // Tracking the most recent order for the hero UI
+  const status = activeOrder?.delivery?.status || activeOrder?.status || 'PENDING';
 
   const currentStageIndex = STATUS_STAGES.findIndex(s => s.key === status);
 
@@ -65,22 +61,22 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="glass-dark rounded-3xl p-8 mb-12 border border-white/10 shadow-2xl relative overflow-hidden">
-        {/* Glow effect specific to the dashboard card */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400/5 rounded-full blur-[80px] pointer-events-none"></div>
+      {activeOrder ? (
+        <div className="glass-dark rounded-3xl p-8 mb-12 border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400/5 rounded-full blur-[80px] pointer-events-none"></div>
 
-        <div className="flex justify-between items-center mb-10 pb-6 border-b border-white/10">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Order #{MOCK_ORDER.id}</h2>
-            <p className="text-gray-400 text-sm">Placed on {MOCK_ORDER.createdAt}</p>
+          <div className="flex justify-between items-center mb-10 pb-6 border-b border-white/10">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Order #{activeOrder.id.substring(0, 8)}</h2>
+              <p className="text-gray-400 text-sm">Placed on {new Date(activeOrder.createdAt).toLocaleDateString()}</p>
+            </div>
+            <div className="text-right">
+              <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600">
+                ₹{activeOrder.totalAmount.toLocaleString()}
+              </span>
+              <p className="text-green-400 font-semibold text-sm">Secured via Moon Glow Pay</p>
+            </div>
           </div>
-          <div className="text-right">
-            <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600">
-              ₹{MOCK_ORDER.total.toFixed(2)}
-            </span>
-            <p className="text-green-400 font-semibold text-sm">Paid via Razorpay</p>
-          </div>
-        </div>
 
         {/* Real-time Tracking Timeline */}
         <div className="mb-12">
@@ -130,26 +126,31 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Order Items */}
-        <div className="bg-black/30 rounded-2xl p-6 border border-white/5">
-          <h4 className="text-white font-semibold mb-6 flex items-center gap-2">
-            <Package className="w-5 h-5 text-gray-400" /> Items in this shipment
-          </h4>
-          <div className="space-y-4">
-            {MOCK_ORDER.items.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4 py-2">
-                <div className="w-16 h-16 rounded-xl overflow-hidden relative">
-                  <Image src={item.image} alt={item.title} fill className="object-cover" />
+          <div className="bg-black/30 rounded-2xl p-6 border border-white/5">
+            <h4 className="text-white font-semibold mb-6 flex items-center gap-2">
+              <Package className="w-5 h-5 text-gray-400" /> Items in this shipment
+            </h4>
+            <div className="space-y-4">
+              {activeOrder.items?.map((item: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-4 py-2">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden relative">
+                    <Image src={item.product?.imageUrl || '/images/placeholder.png'} alt={item.product?.title} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{item.product?.title}</p>
+                    <p className="text-gray-400 text-sm">Qty: {item.quantity}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white font-medium">{item.title}</p>
-                  <p className="text-gray-400 text-sm">Qty: {item.qty}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-20 glass-dark rounded-3xl border border-white/10">
+          <p className="text-gray-400 mb-6">No recent orders found.</p>
+          <button onClick={() => router.push('/')} className="px-8 py-3 bg-yellow-500 text-black font-bold rounded-full">Start Shopping</button>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,30 +3,91 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, LogIn, Lock, User, Phone, Mail, Loader2, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
 
 export default function AdminLogin() {
   const router = useRouter();
   const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [step, setStep] = useState<'input' | 'otp'>('input');
   const [inputValue, setInputValue] = useState('');
+  const [otpValues, setOtpValues] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!inputValue) return;
+    
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: method === 'email' ? inputValue : undefined, phone: method === 'phone' ? inputValue : undefined })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      
       setStep('otp');
-    }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Network error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    const otpString = otpValues.join('');
+    if (otpString.length !== 4) {
+        setErrorMsg('Please enter a valid 4-digit OTP');
+        return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setErrorMsg('');
+    try {
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            email: method === 'email' ? inputValue : undefined, 
+            phone: method === 'phone' ? inputValue : undefined,
+            otp: otpString 
+        })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Invalid OTP');
+      
+      if (data.role !== 'ADMIN') {
+          throw new Error('Access denied. This portal is for Administrators only.');
+      }
+      
+      localStorage.setItem('moonGlowToken', data.token);
+      localStorage.setItem('moonGlowRole', data.role);
       router.push('/dashboard');
-    }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value[value.length - 1];
+    const newValues = [...otpValues];
+    newValues[index] = value;
+    setOtpValues(newValues);
+    
+    if (value && index < 3) {
+      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
+      if (nextInput) nextInput.focus();
+    }
   };
 
   return (
@@ -44,6 +105,12 @@ export default function AdminLogin() {
           <h1 className="text-2xl font-bold text-white">Admin Operations</h1>
           <p className="text-gray-400 text-sm">Secure Portal Access with OTP</p>
         </div>
+
+        {errorMsg && (
+            <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="mb-6 bg-red-500/10 border border-red-500/50 text-red-400 text-xs px-4 py-3 rounded-xl flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4"/> {errorMsg}
+            </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {step === 'input' && (
@@ -102,19 +169,16 @@ export default function AdminLogin() {
               </div>
 
               <div className="mb-8 flex justify-center gap-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+                {[0, 1, 2, 3].map((i) => (
                   <input 
                     key={i}
+                    id={`otp-${i}`}
                     type="text" 
                     maxLength={1}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-black/30 border border-white/10 rounded-xl text-center text-xl text-white font-bold focus:outline-none focus:border-blue-500 focus:bg-white/10 transition-colors"
+                    value={otpValues[i]}
+                    className="w-12 h-12 md:w-14 md:h-14 bg-black/30 border border-white/10 rounded-xl text-center text-xl text-white font-bold focus:outline-none focus:border-blue-500 focus:bg-white/10 transition-colors"
                     required
-                    onChange={(e) => {
-                      if(e.target.value) {
-                        const next = e.target.nextElementSibling as HTMLInputElement;
-                        if(next) next.focus();
-                      }
-                    }}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
                   />
                 ))}
               </div>

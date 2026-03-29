@@ -2,23 +2,83 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, ShoppingCart, Truck, Package, AreaChart, Bell, ArrowRightLeft, Search, PlusCircle, Edit3, ChevronRight, Check } from 'lucide-react';
+import { useEffect } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showNotifications, setShowNotifications] = useState(false);
 
   // RED = Pending, BLUE = In Progress, GREEN = Completed
-  const [orders, setOrders] = useState([
-    { id: '#ORD-101', customer: 'Anwar Artisan', product: 'Luminous Glow Wallmoon', status: 'PENDING', driver: 'Unassigned', amount: '₹4,500' },
-    { id: '#ORD-102', customer: 'Sarah Connor', product: 'Artisan Chocolate', status: 'IN_PROGRESS', driver: 'Driver X', amount: '₹1,998' },
-    { id: '#ORD-103', customer: 'John Doe', product: 'Stardust Keychain', status: 'COMPLETED', driver: 'Driver Z', amount: '₹499' }
-  ]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAssignDriver = (id: string) => {
-    setOrders(prev => prev.map(o => 
-      o.id === id ? { ...o, driver: 'Ramesh K', status: 'IN_PROGRESS' } : o
-    ));
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem('moonGlowToken');
+      if (!token) {
+        window.location.href = '/';
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        // Fetch Orders
+        const ordersRes = await fetch(`${API_URL}/orders`, { headers });
+        const ordersData = await ordersRes.json();
+        if (ordersRes.ok) setOrders(ordersData);
+
+        // Fetch Products
+        const productsRes = await fetch(`${API_URL}/products`, { headers });
+        const productsData = await productsRes.json();
+        if (productsRes.ok) setProducts(productsData);
+
+        // Fetch Drivers
+        const driversRes = await fetch(`${API_URL}/auth/drivers`, { headers });
+        const driversData = await driversRes.json();
+        if (driversRes.ok) setDrivers(driversData);
+
+      } catch (error) {
+        console.error('Dashboard fetch error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleAssignDriver = async (orderId: string, driverId: string) => {
+    const token = localStorage.getItem('moonGlowToken');
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/assign`, {
+        method: 'PUT',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ driverId })
+      });
+      
+      if (res.ok) {
+        // Refresh orders locally
+        setOrders(prev => prev.map(o => 
+          o.id === orderId ? { ...o, status: 'PREPARING', delivery: { ...o.delivery, driverId, status: 'Assigned' } } : o
+        ));
+      }
+    } catch (error) {
+      console.error('Assign driver error:', error);
+    }
   };
+
+  const totalRevenue = orders
+    .filter(o => o.status === 'DELIVERED' || o.status === 'COMPLETED')
+    .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -30,16 +90,16 @@ export default function AdminDashboard() {
   };
 
   const stats = [
-    { label: 'Total Revenue', value: '₹42,500', trending: 'Updated Live', icon: AreaChart, color: 'text-green-400', gradient: 'from-green-500/20 to-green-500/5', tab: 'overview' },
-    { label: 'Pending Orders', value: orders.filter(o => o.status === 'PENDING').length.toString(), trending: 'Needs Action', icon: ShoppingCart, color: 'text-red-400', gradient: 'from-red-500/20 to-red-500/5', tab: 'orders' },
-    { label: 'Active Deliveries', value: orders.filter(o => o.status === 'IN_PROGRESS').length.toString(), trending: 'En Route', icon: Truck, color: 'text-blue-400', gradient: 'from-blue-500/20 to-blue-500/5', tab: 'drivers' },
-    { label: 'Completed Today', value: orders.filter(o => o.status === 'COMPLETED').length.toString(), trending: 'Successful', icon: Package, color: 'text-green-400', gradient: 'from-green-500/20 to-green-500/5', tab: 'orders' }
+    { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString()}`, trending: 'Live Sync', icon: AreaChart, color: 'text-green-400', gradient: 'from-green-500/20 to-green-500/5', tab: 'overview' },
+    { label: 'Pending Orders', value: orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length.toString(), trending: 'Needs Action', icon: ShoppingCart, color: 'text-red-400', gradient: 'from-red-500/20 to-red-500/5', tab: 'orders' },
+    { label: 'Active Deliveries', value: orders.filter(o => o.status === 'PREPARING' || o.status === 'OUT_FOR_DELIVERY').length.toString(), trending: 'En Route', icon: Truck, color: 'text-blue-400', gradient: 'from-blue-500/20 to-blue-500/5', tab: 'drivers' },
+    { label: 'Total Products', value: products.length.toString(), trending: 'Inventory', icon: Package, color: 'text-green-400', gradient: 'from-green-500/20 to-green-500/5', tab: 'products' }
   ];
 
   const getStatusColor = (status: string) => {
-    if(status === 'PENDING') return 'bg-red-500/10 text-red-500 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse';
-    if(status === 'IN_PROGRESS') return 'bg-blue-500/10 text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.3)]';
-    if(status === 'COMPLETED') return 'bg-green-500/10 text-green-400 border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.3)]';
+    if(status === 'PENDING' || status === 'Pending Assignment') return 'bg-red-500/10 text-red-500 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse';
+    if(status === 'IN_PROGRESS' || status === 'PREPARING' || status === 'OUT_FOR_DELIVERY' || status === 'Assigned') return 'bg-blue-500/10 text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.3)]';
+    if(status === 'COMPLETED' || status === 'DELIVERED') return 'bg-green-500/10 text-green-400 border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.3)]';
     return '';
   };
 
@@ -176,29 +236,33 @@ export default function AdminDashboard() {
                         className="border-b border-white/5 group transition-colors"
                       >
                         <td className="py-6 font-black text-white text-lg tracking-tight group-hover:text-blue-400 transition-colors flex items-center gap-3">
-                           {o.status === 'PENDING' && <motion.div animate={{x:[0,5,0]}} transition={{repeat:Infinity}} className="w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_red]"></motion.div>}
-                           {o.status === 'IN_PROGRESS' && <motion.div animate={{x:[0,10,0]}} transition={{repeat:Infinity, duration:2}} className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_blue]"></motion.div>}
-                           {o.status === 'COMPLETED' && <Check className="w-4 h-4 text-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"/>}
-                           {o.id}
+                           {(o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment') && <motion.div animate={{x:[0,5,0]}} transition={{repeat:Infinity}} className="w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_red]"></motion.div>}
+                           {(o.status === 'PREPARING' || o.status === 'OUT_FOR_DELIVERY') && <motion.div animate={{x:[0,10,0]}} transition={{repeat:Infinity, duration:2}} className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_blue]"></motion.div>}
+                           {(o.status === 'COMPLETED' || o.status === 'DELIVERED') && <Check className="w-4 h-4 text-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"/>}
+                           {o.id.substring(0, 8)}
                         </td>
-                        <td className="py-6 text-gray-300 font-bold">{o.customer}</td>
+                        <td className="py-6 text-gray-300 font-bold">{o.customer?.name || 'Artisan Client'}</td>
                         <td className="py-6">
-                          <span className={`text-[10px] px-3 py-1.5 rounded uppercase font-black tracking-widest border ${getStatusColor(o.status)}`}>
-                            {o.status}
+                          <span className={`text-[10px] px-3 py-1.5 rounded uppercase font-black tracking-widest border ${getStatusColor(o.delivery?.status || o.status)}`}>
+                            {o.delivery?.status || o.status}
                           </span>
                         </td>
                         <td className="py-6 text-right relative">
-                          {o.driver === 'Unassigned' ? (
-                            <motion.button 
-                              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} 
-                              onClick={() => handleAssignDriver(o.id)}
-                              className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.4)] transition-all flex items-center gap-2 ml-auto"
-                            >
-                              Dispatch Driver <ArrowRightLeft className="w-4 h-4"/>
-                            </motion.button>
+                          {!o.delivery?.driverId ? (
+                            <div className="flex justify-end gap-2">
+                              <select 
+                                onChange={(e) => handleAssignDriver(o.id, e.target.value)}
+                                className="bg-black/50 border border-white/10 rounded-xl text-xs text-white p-2 outline-none focus:border-blue-500"
+                              >
+                                <option value="">Assign Driver</option>
+                                {drivers.map(d => (
+                                  <option key={d.id} value={d.id}>{d.name}</option>
+                                ))}
+                              </select>
+                            </div>
                           ) : (
-                            <div className={`inline-flex items-center gap-2 px-4 py-2 bg-black/40 border text-xs font-black uppercase tracking-widest rounded-xl ${o.status === 'COMPLETED' ? 'border-green-500/20 text-green-400' : 'border-blue-500/20 text-blue-400'}`}>
-                              <Truck className="w-4 h-4"/> {o.driver} Synced
+                            <div className={`inline-flex items-center gap-2 px-4 py-2 bg-black/40 border text-xs font-black uppercase tracking-widest rounded-xl ${(o.status === 'COMPLETED' || o.status === 'DELIVERED') ? 'border-green-500/20 text-green-400' : 'border-blue-500/20 text-blue-400'}`}>
+                              <Truck className="w-4 h-4"/> {drivers.find(d => d.id === o.delivery.driverId)?.name || 'Driver'} Active
                             </div>
                           )}
                         </td>

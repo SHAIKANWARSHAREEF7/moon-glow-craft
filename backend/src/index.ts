@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import http from 'http';
 import { setupSockets } from './sockets';
 import authRoutes from './routes/auth';
@@ -8,7 +8,8 @@ import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
 import deliveryRoutes from './routes/deliveries';
 
-dotenv.config();
+
+
 
 const app = express();
 const server = http.createServer(app);
