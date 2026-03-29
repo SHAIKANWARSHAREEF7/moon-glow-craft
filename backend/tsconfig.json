@@ -41,8 +41,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "noEmitOnError": false,
-    "ignoreDeprecations": "6.0"
+    "noEmitOnError": false
   },
   "include": ["src/**/*"],
   "exclude": ["src/**/*.test.ts"]
