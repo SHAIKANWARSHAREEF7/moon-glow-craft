@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Truck, Navigation, Phone, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 
 export default function DeliveryLogin() {
   const router = useRouter();

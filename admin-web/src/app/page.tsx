@@ -5,7 +5,7 @@ import { ShieldAlert, LogIn, Lock, User, Phone, Mail, Loader2, ShieldCheck } fro
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef } from 'react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 
 export default function AdminLogin() {
   const router = useRouter();

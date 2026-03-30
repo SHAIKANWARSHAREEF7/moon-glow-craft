@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { io } from 'socket.io-client';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 

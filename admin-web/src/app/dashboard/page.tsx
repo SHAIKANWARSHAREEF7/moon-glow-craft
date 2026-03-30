@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, ShoppingCart, Truck, Package, AreaChart, Bell, ArrowRightLeft, Search, PlusCircle, Edit3, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moon-glow-craft.onrender.com/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 
 export default function AdminDashboard() {
   const router = useRouter();

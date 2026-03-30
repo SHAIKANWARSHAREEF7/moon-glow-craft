@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Truck, User, Mail, Phone, Lock, ArrowRight, Loader2, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_URL = 'https://moon-glow-craft.onrender.com/api';
+const API_URL = 'https://moonglow-backend.onrender.com/api';
 
 export default function DriverSignup() {
   const router = useRouter();
