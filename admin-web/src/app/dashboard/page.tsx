@@ -1,9 +1,5 @@
-"use client"
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, ShoppingCart, Truck, Package, AreaChart, Bell, ArrowRightLeft, Search, PlusCircle, Edit3, ChevronRight, Check } from 'lucide-react';
 import { useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 
@@ -17,6 +13,7 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,6 +50,29 @@ export default function AdminDashboard() {
     };
 
     fetchData();
+
+    // Socket.io connection for real-time alerts
+    const socket = io(API_URL.replace('/api', ''));
+    
+    socket.on('connect', () => {
+        console.log('Connected to socket server');
+    });
+
+    socket.on('newOrder', (newOrder: any) => {
+        console.log('New order received:', newOrder);
+        setOrders(prev => [newOrder, ...prev]);
+        setNotifications(prev => [
+            { id: Date.now(), title: 'New Order Received', message: `Order from ${newOrder.customer?.name || 'Customer'}`, time: 'Just now' },
+            ...prev
+        ]);
+        setShowNotifications(true);
+        // Optional: Play sound
+        try { new Audio('/notification.mp3').play(); } catch(e) {}
+    });
+
+    return () => {
+        socket.disconnect();
+    };
   }, []);
 
   const handleAssignDriver = async (orderId: string, driverId: string) => {
@@ -174,12 +194,24 @@ export default function AdminDashboard() {
                   transition={{ type: "spring", stiffness: 200, damping: 20 }}
                   className="absolute top-16 right-0 w-80 bg-[#1c1f26] border border-white/10 rounded-2xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)] z-50 origin-top-right overflow-hidden"
                 >
-                  <h3 className="font-bold text-white mb-3 flex items-center gap-2 border-b border-white/5 pb-3 px-2 text-sm uppercase tracking-widest text-gray-400"><Bell className="w-4 h-4"/> Live Alerts</h3>
-                  <div className="space-y-2 relative z-10">
-                    <motion.div onClick={() => { setActiveTab('orders'); setShowNotifications(false); }} whileHover={{ x: 4, backgroundColor: 'rgba(59, 130, 246, 0.1)' }} className="p-4 bg-white/5 border border-white/5 rounded-xl cursor-pointer transition-colors mt-2">
-                       <p className="text-sm text-white font-bold tracking-wide">Socket: Incoming Order</p>
-                       <p className="text-xs text-blue-400 mt-1">Pending Assignment!</p>
-                    </motion.div>
+                    <h3 className="font-bold text-white mb-3 flex items-center gap-2 border-b border-white/5 pb-3 px-2 text-sm uppercase tracking-widest text-gray-400"><Bell className="w-4 h-4"/> Live Alerts</h3>
+                  <div className="space-y-2 relative z-10 max-h-60 overflow-y-auto pr-2">
+                    {notifications.length === 0 ? (
+                        <p className="text-gray-500 text-xs text-center py-4">No new alerts</p>
+                    ) : (
+                        notifications.map(n => (
+                            <motion.div 
+                                key={n.id} 
+                                onClick={() => { setActiveTab('orders'); setShowNotifications(false); }} 
+                                whileHover={{ x: 4, backgroundColor: 'rgba(59, 130, 246, 0.1)' }} 
+                                className="p-4 bg-white/5 border border-white/5 rounded-xl cursor-pointer transition-colors mt-2"
+                            >
+                                <p className="text-sm text-white font-bold tracking-wide">{n.title}</p>
+                                <p className="text-xs text-blue-400 mt-1">{n.message}</p>
+                                <p className="text-[10px] text-gray-500 mt-2">{n.time}</p>
+                            </motion.div>
+                        ))
+                    )}
                   </div>
                 </motion.div>
               )}

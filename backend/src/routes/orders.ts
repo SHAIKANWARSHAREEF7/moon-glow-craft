@@ -56,8 +56,14 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
                     }
                 }
             },
-            include: { items: true, delivery: true }
+            include: { items: { include: { product: true } }, delivery: true, customer: { select: { name: true, email: true } } }
         });
+
+        // Real-time Notification for Admin
+        const { io } = require('../sockets');
+        if (io) {
+            io.emit('newOrder', order);
+        }
 
         res.status(201).json(order);
     } catch (error) {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Splash from "../components/Splash";
+import AuthGate from "../components/AuthGate";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,11 +18,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.className}>
-      <body className="antialiased flex flex-col min-h-screen">
-        <Splash />
-        <main className="flex-grow flex flex-col w-full h-full relative">
+      <body className="antialiased flex flex-col min-h-screen bg-[#0A0A0B] text-white">
+        <AuthGate>
           {children}
-        </main>
+        </AuthGate>
       </body>
     </html>
   );

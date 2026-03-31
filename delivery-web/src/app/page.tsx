@@ -151,6 +151,13 @@ export default function DeliveryLogin() {
               >
                 {loading ? <Loader2 className="w-6 h-6 animate-spin"/> : <><Navigation className="w-5 h-5"/> Send OTP</>}
               </button>
+
+              <div className="pt-4 border-t border-del-border text-center">
+                 <p className="text-gray-500 text-sm mb-2">New here?</p>
+                 <button type="button" onClick={() => router.push('/signup')} className="text-del-primary font-black uppercase text-xs tracking-widest hover:underline">
+                    Become a Partner / Sign Up
+                 </button>
+              </div>
             </motion.form>
           )}
 

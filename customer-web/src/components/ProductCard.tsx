@@ -19,26 +19,25 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <motion.div 
-      whileHover={{ y: -10 }}
-      className="glass rounded-2xl overflow-hidden group border border-white/5 transition-all duration-300 hover:border-yellow-500/50 flex flex-col"
+      whileHover={{ y: -15, scale: 1.02 }}
+      className="glass rounded-3xl overflow-hidden group border border-white/5 transition-all duration-500 hover:border-yellow-500/30 hover:shadow-[0_20px_50px_rgba(234,179,8,0.1)] flex flex-col relative"
     >
-      <Link href={`/product/${product.id}`} className="block relative h-64 w-full overflow-hidden bg-black/50">
+      <Link href={`/product/${product.id}`} className="block relative h-72 w-full overflow-hidden bg-black/50">
         <Image 
           src={product.imageUrl} 
           alt={product.title}
           fill
-          className="object-cover group-hover:scale-110 transition-transform duration-700"
+          className="object-cover group-hover:scale-105 transition-transform duration-1000"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-          <span className="bg-yellow-500 text-black px-6 py-2 rounded-full font-bold shadow-[0_0_15px_rgba(251,191,36,0.5)]">
-            View Details
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-8">
+          <span className="bg-yellow-500 text-black px-8 py-3 rounded-full font-bold shadow-[0_0_20px_rgba(251,191,36,0.3)] transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+            Discover More
           </span>
         </div>
       </Link>
-      <div className="p-6 relative z-10 bg-moonglow-dark/80 backdrop-blur-md flex-1 flex flex-col">
-        <p className="text-xs text-yellow-400 font-semibold mb-2 tracking-widest">{product.category}</p>
+      <div className="p-8 relative z-10 bg-gradient-to-b from-[#111]/80 to-[#0a0a0a]/90 backdrop-blur-xl flex-1 flex flex-col">
         <Link href={`/product/${product.id}`}>
-          <h3 className="text-xl font-bold mb-2 text-white line-clamp-1 hover:text-yellow-400 transition-colors" style={{ fontFamily: 'var(--font-playfair)' }}>
+          <h3 className="text-2xl font-bold mb-3 text-white line-clamp-1 group-hover:text-yellow-400 transition-colors tracking-tight" style={{ fontFamily: 'var(--font-playfair)' }}>
             {product.title}
           </h3>
         </Link>

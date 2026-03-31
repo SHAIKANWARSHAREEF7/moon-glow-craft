@@ -31,10 +31,20 @@ router.post('/register', async (req: Request, res: Response) => {
                 email,
                 password: hashedPassword,
                 role: validRole as any,
+                isVerified: false // New users start unverified
             }
         });
 
-        res.status(201).json({ message: 'User registered successfully', userId: user.id });
+        // Generate and Send OTP for Verification immediately
+        const otp = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { otp, otpExpiry }
+        });
+        await sendOTPByEmail(email, otp);
+
+        res.status(201).json({ message: 'User registered successfully. Please verify your OTP.', userId: user.id });
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ error: 'Failed to register' });
@@ -45,18 +55,50 @@ router.post('/login', async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
+        // Strict Admin Check
+        const isAdminEmail = email === 'shaikanwar7204@gmail.com';
+        const isAdminPassword = password === 'Anwar@786';
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        let user = await prisma.user.findUnique({ where: { email } });
+        
         if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password' });
+            // If it's the specific admin trying to login for the first time, or if we want to auto-create him
+            if (isAdminEmail && isAdminPassword) {
+                // Auto-create/ensure admin exists (optional, but safer)
+                const hashedPassword = await bcrypt.hash(password, 10);
+                user = await prisma.user.upsert({
+                    where: { email },
+                    update: { role: 'ADMIN', isVerified: true },
+                    create: { 
+                        email, 
+                        password: hashedPassword, 
+                        name: 'Admin', 
+                        role: 'ADMIN', 
+                        isVerified: true 
+                    }
+                });
+            } else {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
         }
 
-        const isValid = await bcrypt.compare(password, user.password);
-        if (!isValid) {
-            return res.status(401).json({ error: 'Invalid email or password' });
+        // If user is ADMIN, check against the specific password provided
+        if (user.role === 'ADMIN') {
+            if (!isAdminEmail || !isAdminPassword) {
+                return res.status(401).json({ error: 'Restricted Admin Access: Invalid Credentials' });
+            }
+        }
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
+        
+        if (!user.isVerified) {
+            // If not verified, trigger OTP send and inform user
+            const otp = generateOTP();
+            const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+            await prisma.user.update({ where: { email }, data: { otp, otpExpiry } });
+            await sendOTPByEmail(email, otp);
+            return res.status(403).json({ error: 'Your account is not verified. A verification OTP has been sent to your email.', unverified: true });
         }
 
         const token = jwt.sign(
@@ -83,7 +125,16 @@ router.post('/send-otp', async (req: Request, res: Response) => {
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-            return res.status(404).json({ error: 'User not found. Please register first or use an original email.' });
+            return res.status(404).json({ error: 'User not found. Please register first.' });
+        }
+
+        // High Security: Restrict ADMIN login to a specific authorized email
+        if (user.role === 'ADMIN') {
+            const authorizedAdminEmail = process.env.ADMIN_EMAIL;
+            if (!authorizedAdminEmail || email.toLowerCase() !== authorizedAdminEmail.toLowerCase()) {
+                console.warn(`Unauthorized Admin login attempt from: ${email}`);
+                return res.status(403).json({ error: 'Unauthorized access. This account is not authorized for Admin operations.' });
+            }
         }
 
         await prisma.user.update({
@@ -121,7 +172,7 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
 
         await prisma.user.update({
             where: { email },
-            data: { otp: null, otpExpiry: null }
+            data: { otp: null, otpExpiry: null, isVerified: true } // Mark as verified on success
         });
 
         const token = jwt.sign(
@@ -161,6 +212,45 @@ router.get('/drivers', authenticate, async (req: AuthRequest, res: Response) => 
         res.json(drivers);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch drivers' });
+    }
+});
+
+router.post('/forgot-password', async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const otp = generateOTP();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await prisma.user.update({ where: { email }, data: { otp, otpExpiry } });
+        await sendOTPByEmail(email, otp);
+
+        res.json({ message: 'Password reset OTP sent to your email' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to send reset OTP' });
+    }
+});
+
+router.post('/reset-password', async (req: Request, res: Response) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const user = await prisma.user.findUnique({ where: { email } });
+        
+        if (!user || user.otp !== otp) return res.status(401).json({ error: 'Invalid OTP' });
+        if (user.otpExpiry && new Date() > user.otpExpiry) return res.status(401).json({ error: 'OTP expired' });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await prisma.user.update({
+            where: { email },
+            data: { password: hashedPassword, otp: null, otpExpiry: null, isVerified: true }
+        });
+
+        res.json({ message: 'Password reset successful' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reset password' });
     }
 });
 

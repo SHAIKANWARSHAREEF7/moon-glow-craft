@@ -12,15 +12,10 @@ export default function Home() {
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-
+  
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return p.title.toLowerCase().includes(searchQuery.toLowerCase());
   });
-
-  const categories = ['ALL', 'CHOCOLATE', 'KEYCHAIN', 'WALLMOON', 'THREAD_ART'];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -33,7 +28,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] overflow-x-hidden">
       {/* Artisan Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden pt-20">
         <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-[#0a0a0a]" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-400/10 rounded-full blur-[120px] animate-pulse" />
@@ -56,7 +51,7 @@ export default function Home() {
               Discover a world of celestial beauty and handcrafted elegance. From glowing wall art to artisan chocolates, every piece tells a story.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/products" className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+              <Link href="#featured" className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full transition-all hover:scale-105 flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
                 Shop Collection <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="#featured" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full border border-white/10 transition-all backdrop-blur-sm">
@@ -77,34 +72,20 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Search & Category Filter */}
-      <section className="py-12 bg-[#0a0a0a] sticky top-0 z-40 backdrop-blur-md border-b border-white/5">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+      {/* Search Section */}
+      <section className="py-12 bg-[#0a0a0a] sticky top-[80px] z-40 backdrop-blur-md border-b border-white/5">
+        <div className="container mx-auto px-4 flex justify-center">
+            <div className="relative w-full md:w-[600px] group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500/20 to-yellow-200/20 rounded-2xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-yellow-500/50 group-focus-within:text-yellow-400 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search for magic..."
+                placeholder="Search for something special..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-yellow-500 transition-all"
+                className="relative w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-light tracking-wide"
               />
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar w-full md:w-auto">
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-6 py-2 rounded-full text-xs font-bold tracking-widest transition-all whitespace-nowrap ${
-                    selectedCategory === cat ? 'bg-yellow-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
