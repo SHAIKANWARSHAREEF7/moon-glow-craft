@@ -150,6 +150,13 @@ export default function AdminLogin() {
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin"/> : 'Send Secure OTP'}
               </button>
+
+              <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                 <p className="text-gray-500 text-xs mb-3 uppercase tracking-widest font-black">Admin Management</p>
+                 <button type="button" onClick={() => router.push('/signup')} className="w-full py-3 bg-white/5 hover:bg-blue-500/10 border border-blue-500/30 text-blue-400 font-bold rounded-xl transition-all flex justify-center items-center gap-2">
+                    <User className="w-4 h-4" /> Create Admin Account
+                 </button>
+              </div>
             </motion.form>
           )}
 

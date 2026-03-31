@@ -133,10 +133,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-10 pt-8 border-t border-white/5 text-center">
-            <p className="text-gray-500 text-sm mb-4 tracking-wide font-medium">New to Moon Glow Craft?</p>
-            <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all hover:scale-105 active:scale-95">
-                <UserPlus className="w-4 h-4 text-yellow-500" /> Create Artisan Account
+        <div className="mt-8 pt-8 border-t border-white/5 text-center">
+            <p className="text-gray-500 text-xs mb-4 uppercase tracking-[0.2em] font-black">Authentication Options</p>
+            <Link href="/signup" id="signup-link-main" className="w-full py-4 bg-white/5 hover:bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-black rounded-2xl transition-all flex justify-center items-center gap-2 group shadow-[0_0_20px_rgba(234,179,8,0.05)] hover:shadow-[0_0_30px_rgba(234,179,8,0.15)]">
+                <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform" /> 
+                <span className="tracking-tighter">CREATE NEW ACCOUNT</span>
             </Link>
         </div>
       </motion.div>
