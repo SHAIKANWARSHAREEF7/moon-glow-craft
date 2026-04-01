@@ -1,5 +1,13 @@
-import { useEffect } from 'react';
+"use client"
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  LayoutDashboard, ShoppingCart, Package, Truck, 
+  ChevronRight, Bell, ArrowRightLeft, Check, 
+  AreaChart, ShieldAlert 
+} from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 

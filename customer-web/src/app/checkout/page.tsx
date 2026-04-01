@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cartStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Loader2, CheckCircle2, Lock } from 'lucide-react';
 
 export default function CheckoutPage() {
   const router = useRouter();
