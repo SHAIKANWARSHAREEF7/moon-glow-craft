@@ -204,6 +204,12 @@ export default function DeliveryLogin() {
           )}
         </AnimatePresence>
       </motion.div>
+
+      <footer className="mt-8 text-center opacity-50">
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+            Moon Glow Delivery System • <span className="text-del-primary">Owner: Shaik Anwar Shareef</span>
+        </p>
+      </footer>
     </div>
   );
 }

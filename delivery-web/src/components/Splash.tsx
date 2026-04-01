@@ -7,7 +7,7 @@ export default function Splash() {
     const [show, setShow] = useState(true);
     
     useEffect(() => {
-        const timer = setTimeout(() => setShow(false), 3000);
+        const timer = setTimeout(() => setShow(false), 1500);
         return () => clearTimeout(timer);
     }, []);
 
@@ -18,7 +18,7 @@ export default function Splash() {
                     key="splash"
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0, scale: 1.05, filter: "blur(20px)" }} 
-                    transition={{ duration: 1, ease: "easeInOut" }} 
+                    transition={{ duration: 0.8, ease: "easeInOut" }} 
                     className="fixed inset-0 z-[9999] bg-[#0A0A0B] flex items-center justify-center overflow-hidden"
                 >
                     <motion.div 
@@ -52,7 +52,6 @@ export default function Splash() {
                             Partner Dashboard
                         </p>
                         
-                        {/* Delivery Progress Dots Animation */}
                         <div className="flex gap-2 mt-8">
                            {[0, 1, 2].map((i) => (
                              <motion.div 

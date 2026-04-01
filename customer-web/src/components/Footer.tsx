@@ -22,7 +22,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-white/10 text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} Moon Glow Craft. All rights reserved.
+          &copy; {new Date().getFullYear()} Moon Glow Craft. All rights reserved. <span className="block mt-1 text-gray-400 font-bold">Owner: Shaik Anwar Shareef</span>
         </div>
       </div>
     </footer>

@@ -206,6 +206,12 @@ export default function DeliveryTasks() {
           </AnimatePresence>
         )}
       </div>
+
+      <footer className="py-4 border-t border-white/5 text-center bg-[#0a0a0a]">
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+            Moon Glow Delivery System • <span className="text-emerald-500">Owner: Shaik Anwar Shareef</span>
+        </p>
+      </footer>
     </div>
   );
 }

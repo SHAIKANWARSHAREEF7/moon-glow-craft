@@ -412,6 +412,12 @@ export default function AdminDashboard() {
           </motion.div>
         )}
         </AnimatePresence>
+
+        <footer className="mt-12 py-6 border-t border-white/5 text-center">
+            <p className="text-gray-500 text-sm italic tracking-widest uppercase font-black opacity-50">
+                Authorized Access Only • Moon Glow Craft System • <span className="text-blue-400">Owner: Shaik Anwar Shareef</span>
+            </p>
+        </footer>
       </main>
     </div>
   );
