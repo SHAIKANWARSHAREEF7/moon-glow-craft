@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Truck, User, Mail, Phone, Lock, ArrowRight, Loader2, MapPin, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Truck, User, Mail, Phone, Lock, ArrowRight, Loader2, MapPin, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
