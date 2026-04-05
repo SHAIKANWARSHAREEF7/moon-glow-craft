@@ -9,7 +9,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isLoginPage = pathname === '/login' || pathname === '/'; // Admin often has root as login or /login
+  const isLoginPage = pathname === '/' || pathname?.startsWith('/login');
 
   useEffect(() => {
     const checkAuth = () => {
@@ -23,26 +23,29 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         }
       } else {
         setIsAuthenticated(false);
-        if (pathname !== '/login') {
-          router.push('/login');
+        if (pathname !== '/') {
+          router.push('/');
         }
       }
       // Splash timing
-      const timer = setTimeout(() => setLoading(false), 3100);
+      const timer = setTimeout(() => setLoading(false), 1500);
       return () => clearTimeout(timer);
     };
 
-    checkAuth();
+    const cleanup = checkAuth();
+    return cleanup;
   }, [pathname, router, isLoginPage]);
 
-  if (loading) return <Splash />;
-
-  // Enforce login for anything except the login page
-  if (!isAuthenticated && !isLoginPage) return <div className="min-h-screen bg-[#0a0a0a]" />;
-
   return (
-    <main className="flex-grow flex flex-col w-full h-full relative">
-      {children}
-    </main>
+    <>
+      {loading && <Splash />}
+      {!isAuthenticated && !isLoginPage ? (
+        <div className="min-h-screen bg-[#0a0a0a]" />
+      ) : (
+        <main className="flex-grow flex flex-col w-full h-full relative">
+          {children}
+        </main>
+      )}
+    </>
   );
 }

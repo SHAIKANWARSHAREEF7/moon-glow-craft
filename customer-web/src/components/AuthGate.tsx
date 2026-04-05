@@ -11,39 +11,50 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/reset-password';
+  const isProtectedPage = pathname?.includes('/dashboard') || pathname?.includes('/checkout') || pathname?.includes('/track');
+  const isAuthPage = pathname?.includes('/login') || pathname?.includes('/signup') || pathname?.includes('/reset-password');
 
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('moonGlowToken');
       if (token) {
         setIsAuthenticated(true);
+        // If logged in and on auth page, redirect to dashboard
+        if (isAuthPage) {
+          router.push('/dashboard');
+        }
       } else {
         setIsAuthenticated(false);
-        if (!isAuthPage) {
+        // If not logged in and on a PROTECTED page, redirect to login
+        if (isProtectedPage) {
           router.push('/login');
         }
       }
-      // Keep splash for 3s
-      const timer = setTimeout(() => setLoading(false), 3100);
+      
+      const timer = setTimeout(() => setLoading(false), 1500);
+
+      // Return cleanup directly to checkAuth's caller
       return () => clearTimeout(timer);
     };
 
-    checkAuth();
-  }, [pathname, router, isAuthPage]);
-
-  if (loading) return <Splash />;
-
-  // If not authenticated and not on an auth page, shield the content while redirecting
-  if (!isAuthenticated && !isAuthPage) return <div className="min-h-screen bg-black" />;
+    const cleanup = checkAuth();
+    return cleanup;
+  }, [pathname, router, isAuthPage, isProtectedPage]);
 
   return (
     <>
-      {!isAuthPage && <Navbar />}
-      <main className={`flex-grow flex flex-col items-center min-h-screen ${!isAuthPage ? 'pt-20' : ''}`}>
-        {children}
-      </main>
-      {!isAuthPage && <Footer />}
+      {loading && <Splash />}
+      {!isAuthenticated && isProtectedPage ? (
+        <div className="min-h-screen bg-black" />
+      ) : (
+        <>
+          {!isAuthPage && <Navbar />}
+          <main className={`flex-grow flex flex-col items-center min-h-screen ${!isAuthPage ? 'pt-20' : ''}`}>
+            {children}
+          </main>
+          {!isAuthPage && <Footer />}
+        </>
+      )}
     </>
   );
 }

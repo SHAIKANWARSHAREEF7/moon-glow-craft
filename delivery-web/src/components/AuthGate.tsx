@@ -9,7 +9,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isAuthPage = pathname === '/' || pathname === '/signup'; // Delivery root is often login
+  const isAuthPage = pathname === '/' || pathname?.startsWith('/signup'); // Delivery root is often login
 
   useEffect(() => {
     const checkAuth = () => {
@@ -28,20 +28,24 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         }
       }
       
-      const timer = setTimeout(() => setLoading(false), 3100);
+      const timer = setTimeout(() => setLoading(false), 1500);
       return () => clearTimeout(timer);
     };
 
-    checkAuth();
+    const cleanup = checkAuth();
+    return cleanup;
   }, [pathname, router, isAuthPage]);
 
-  if (loading) return <Splash />;
-
-  if (!isAuthenticated && !isAuthPage) return <div className="min-h-screen bg-[#0A0A0B]" />;
-
   return (
-    <main className="flex-grow flex flex-col w-full h-full relative">
-      {children}
-    </main>
+    <>
+      {loading && <Splash />}
+      {!isAuthenticated && !isAuthPage ? (
+        <div className="min-h-screen bg-[#0A0A0B]" />
+      ) : (
+        <main className="flex-grow flex flex-col w-full h-full relative">
+          {children}
+        </main>
+      )}
+    </>
   );
 }
