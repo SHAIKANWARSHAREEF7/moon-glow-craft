@@ -13,20 +13,12 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem('moonGlowToken');
-      const role = localStorage.getItem('userRole');
-
-      if (token && role === 'ADMIN') {
-        setIsAuthenticated(true);
-        if (pathname === '/login' || pathname === '/') {
-            router.push('/dashboard');
-        }
-      } else {
-        setIsAuthenticated(false);
-        if (pathname !== '/') {
-          router.push('/');
-        }
+      // Bypass login logic completely for testing
+      setIsAuthenticated(true);
+      if (pathname === '/login' || pathname === '/') {
+          router.push('/dashboard');
       }
+
       // Splash timing
       const timer = setTimeout(() => setLoading(false), 1500);
       return () => clearTimeout(timer);

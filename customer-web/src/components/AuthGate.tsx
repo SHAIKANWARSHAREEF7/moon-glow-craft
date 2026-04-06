@@ -16,21 +16,12 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem('moonGlowToken');
-      if (token) {
-        setIsAuthenticated(true);
-        // If logged in and on auth page, redirect to dashboard
-        if (isAuthPage) {
-          router.push('/dashboard');
-        }
-      } else {
-        setIsAuthenticated(false);
-        // If not logged in and on a PROTECTED page, redirect to login
-        if (isProtectedPage) {
-          router.push('/login');
-        }
+      // Bypass login logic completely for testing
+      setIsAuthenticated(true);
+      if (isAuthPage) {
+        router.push('/dashboard');
       }
-      
+
       const timer = setTimeout(() => setLoading(false), 1500);
 
       // Return cleanup directly to checkAuth's caller
