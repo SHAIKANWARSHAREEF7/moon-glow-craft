@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Moon, Map, User, LogIn, LogOut, UserPlus } from 'lucide-react';
+import { ShoppingBag, Moon, Map, User, LogIn, LogOut, UserPlus, Search, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,6 +10,8 @@ export default function Navbar() {
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
 
@@ -30,6 +32,13 @@ export default function Navbar() {
     window.location.href = '/login';
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(searchQuery.trim()){
+       window.location.href = `/?q=${encodeURIComponent(searchQuery)}`;
+    }
+  };
+
   const navVariants: any = {
     hidden: { y: -100, opacity: 0 },
     visible: { 
@@ -44,25 +53,51 @@ export default function Navbar() {
   };
 
   return (
+    <>
     <motion.nav 
       initial="hidden" animate="visible" variants={navVariants}
       className="fixed top-0 left-0 w-full z-50 glass-dark border-b border-white/5"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-20 gap-4">
           
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="flex items-center gap-4">
+            {/* Hamburger Sidebar Trigger */}
+            <button onClick={() => setShowSidebar(true)} className="text-gray-400 hover:text-white transition-colors">
+               <Menu className="w-6 h-6" />
+            </button>
             <Link href="/" className="flex items-center gap-3 group cursor-pointer">
               <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform shadow-[0_0_20px_rgba(234,179,8,0.3)]">
                 <Moon className="w-6 h-6 text-black" />
               </div>
-              <span className="text-xl font-black text-white tracking-tighter" style={{ fontFamily: 'var(--font-playfair)' }}>
+              <span className="text-xl font-black text-white tracking-tighter hidden sm:block" style={{ fontFamily: 'var(--font-playfair)' }}>
                 MOON<span className="text-yellow-400">GLOW</span>
               </span>
             </Link>
           </motion.div>
+
+          {/* Central Search Bar (Amazon Style) */}
+          <motion.div variants={itemVariants} className="flex-grow max-w-2xl hidden md:block mx-4">
+            <form onSubmit={handleSearch} className="flex w-full">
+               <select className="bg-[#1a1a1c] border border-white/10 text-gray-300 text-sm rounded-l-md px-3 outline-none hover:bg-white/5 transition-colors focus:border-yellow-500 cursor-pointer">
+                  <option value="all">All</option>
+                  <option value="chocolates">Chocolates</option>
+                  <option value="keychains">Keychains</option>
+               </select>
+               <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search Moon Glow Craft"
+                  className="flex-grow px-4 py-2 bg-white text-black outline-none font-medium placeholder-gray-500"
+               />
+               <button type="submit" className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 rounded-r-md transition-colors flex items-center justify-center">
+                  <Search className="w-5 h-5"/>
+               </button>
+            </form>
+          </motion.div>
           
-          <motion.div variants={itemVariants} className="flex items-center gap-8">
+          <motion.div variants={itemVariants} className="flex items-center gap-6">
             <Link href="/#featured" className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors duration-300 hidden md:block">
               Collection
             </Link>
@@ -141,5 +176,57 @@ export default function Navbar() {
         </div>
       </div>
     </motion.nav>
+
+    {/* Sidebar Drawer */}
+    <AnimatePresence>
+      {showSidebar && (
+        <>
+          <motion.div 
+             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+             onClick={() => setShowSidebar(false)}
+             className="fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm"
+          />
+          <motion.div 
+             initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+             transition={{ type: 'tween', duration: 0.3 }}
+             className="fixed top-0 left-0 h-full w-80 bg-[#111] z-[70] border-r border-white/10 flex flex-col shadow-2xl"
+          >
+             <div className="flex items-center justify-between p-6 bg-[#1a1a1c] border-b border-white/5">
+                <div className="flex items-center gap-3">
+                   <User className="w-6 h-6 text-yellow-500" />
+                   <span className="text-white font-bold text-lg tracking-wide">Hello, {isLoggedIn ? userName : 'Artisan'}</span>
+                </div>
+                <button onClick={() => setShowSidebar(false)} className="text-gray-400 hover:text-white">
+                   <X className="w-6 h-6" />
+                </button>
+             </div>
+             
+             <div className="flex-grow overflow-y-auto py-4">
+                <div className="px-6 py-2">
+                   <h3 className="text-xl font-bold text-white mb-4 tracking-tighter">Shop by Category</h3>
+                   <ul className="space-y-4">
+                      <li><Link href="/?category=chocolates" onClick={()=>setShowSidebar(false)} className="text-gray-400 hover:text-yellow-500 font-medium text-lg transition-colors">Premium Chocolates</Link></li>
+                      <li><Link href="/?category=keychains" onClick={()=>setShowSidebar(false)} className="text-gray-400 hover:text-yellow-500 font-medium text-lg transition-colors">Resin Keychains</Link></li>
+                      <li><Link href="/?category=wallmoons" onClick={()=>setShowSidebar(false)} className="text-gray-400 hover:text-yellow-500 font-medium text-lg transition-colors">Wall Moons</Link></li>
+                      <li><Link href="/?category=threadart" onClick={()=>setShowSidebar(false)} className="text-gray-400 hover:text-yellow-500 font-medium text-lg transition-colors">Thread Art</Link></li>
+                   </ul>
+                </div>
+                <div className="h-[1px] bg-white/5 my-4 mx-6" />
+                <div className="px-6 py-2">
+                   <h3 className="text-xl font-bold text-white mb-4 tracking-tighter">Help & Settings</h3>
+                   <ul className="space-y-4">
+                      <li><Link href="/dashboard" onClick={()=>setShowSidebar(false)} className="text-gray-400 hover:text-yellow-500 font-medium text-lg transition-colors">Your Account</Link></li>
+                      <li><Link href="/track" onClick={()=>setShowSidebar(false)} className="text-gray-400 hover:text-yellow-500 font-medium text-lg transition-colors">Customer Service</Link></li>
+                      {isLoggedIn && (
+                         <li><button onClick={handleLogout} className="text-red-400 hover:text-red-300 font-medium text-lg transition-colors">Sign Out</button></li>
+                      )}
+                   </ul>
+                </div>
+             </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+    </>
   );
 }

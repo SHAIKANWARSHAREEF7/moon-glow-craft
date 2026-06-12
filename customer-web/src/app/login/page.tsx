@@ -51,19 +51,15 @@ export default function LoginPage() {
 
   return (
     <div className="w-full flex-grow flex items-center justify-center pt-24 pb-12 px-4 relative">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-400/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-[#0a0a0a] pointer-events-none"></div>
 
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="glass-dark border border-yellow-500/20 p-10 rounded-[2.5rem] w-full max-w-md shadow-[0_0_50px_rgba(251,191,36,0.1)] relative z-10"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-black/80 border border-white/10 p-6 md:p-8 rounded-xl w-full max-w-[380px] relative z-10"
       >
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex justify-center items-center mx-auto mb-6 shadow-lg shadow-yellow-500/30 rotate-3">
-            <Sparkles className="w-8 h-8 text-black" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'var(--font-playfair)' }}>Sign In</h1>
-          <p className="text-gray-400 text-sm">Welcome back to Moon Glow Craft</p>
+        <div className="mb-6">
+          <h1 className="text-3xl font-medium text-white mb-1">Sign in</h1>
         </div>
 
         <AnimatePresence mode="wait">
@@ -86,60 +82,61 @@ export default function LoginPage() {
           )}
         </AnimatePresence>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div className="group">
-            <label className="text-[10px] text-yellow-500/70 uppercase tracking-[0.2em] font-black mb-2 block ml-1 transition-colors group-focus-within:text-yellow-400">
-              Email Identity
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="text-sm text-white font-bold mb-1 block">
+              Email or mobile phone number
             </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-yellow-500 transition-colors" />
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="artisan@moonglow.in"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all font-light"
-                required 
-              />
-            </div>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-[#1a1a1c] border border-white/20 rounded-md py-2 px-3 text-white focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_0_2px_rgba(234,179,8,0.2)] transition-all font-light"
+              required 
+            />
           </div>
 
-          <div className="group">
-            <div className="flex justify-between items-center mb-2 px-1">
-                <label className="text-[10px] text-yellow-500/70 uppercase tracking-[0.2em] font-black transition-colors group-focus-within:text-yellow-400">
-                Security Key
+          <div>
+            <div className="flex justify-between items-center mb-1">
+                <label className="text-sm text-white font-bold block">
+                  Password
                 </label>
-                <Link href="/reset-password" id="forgot-password-link" className="text-[10px] text-gray-500 hover:text-yellow-500 font-bold uppercase tracking-widest transition-colors">Forgot Password?</Link>
+                <Link href="/reset-password" id="forgot-password-link" className="text-sm text-blue-500 hover:text-red-500 hover:underline transition-colors">Forgot Password</Link>
             </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-yellow-500 transition-colors" />
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-yellow-500/50 transition-all"
-                required 
-              />
-            </div>
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-[#1a1a1c] border border-white/20 rounded-md py-2 px-3 text-white focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_0_2px_rgba(234,179,8,0.2)] transition-all"
+              required 
+            />
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:scale-[1.03] active:scale-95 text-black font-black text-lg rounded-2xl flex justify-center items-center gap-3 transition-all shadow-[0_15px_30px_rgba(234,179,8,0.2)] disabled:opacity-70 disabled:hover:scale-100 mt-8"
+            className="w-full py-2 bg-[#FFD814] hover:bg-[#F7CA00] text-black text-sm rounded-md transition-colors shadow-sm disabled:opacity-70 mt-4"
           >
-            {loading ? <Loader2 className="w-6 h-6 animate-spin"/> : <>Enter Dashboard <ArrowRight className="w-5 h-5"/></>}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : 'Continue'}
           </button>
         </form>
 
-        <div className="mt-8 pt-8 border-t border-white/5 text-center">
-            <p className="text-gray-500 text-xs mb-4 uppercase tracking-[0.2em] font-black">Authentication Options</p>
-            <Link href="/signup" id="signup-link-main" className="w-full py-4 bg-white/5 hover:bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-black rounded-2xl transition-all flex justify-center items-center gap-2 group shadow-[0_0_20px_rgba(234,179,8,0.05)] hover:shadow-[0_0_30px_rgba(234,179,8,0.15)]">
-                <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform" /> 
-                <span className="tracking-tighter">CREATE NEW ACCOUNT</span>
-            </Link>
+        <div className="mt-6 text-xs text-gray-400 leading-tight">
+          By continuing, you agree to Moon Glow Craft's <span className="text-blue-500 hover:text-red-500 hover:underline cursor-pointer">Conditions of Use</span> and <span className="text-blue-500 hover:text-red-500 hover:underline cursor-pointer">Privacy Notice</span>.
         </div>
+
+        <div className="mt-8 pt-4 relative">
+            <div className="absolute inset-0 flex items-center">
+               <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+               <span className="bg-black/80 px-2 text-gray-500">New to Moon Glow?</span>
+            </div>
+        </div>
+
+        <Link href="/signup" id="signup-link-main" className="items-center justify-center text-sm w-full py-2 mt-4 bg-[#1a1a1c] hover:bg-[#2a2a2c] border border-white/20 text-white rounded-md transition-colors flex group">
+            Create your Moon Glow account
+        </Link>
       </motion.div>
     </div>
   );

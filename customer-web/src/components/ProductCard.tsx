@@ -44,13 +44,22 @@ export default function ProductCard({ product }: { product: Product }) {
         <p className="text-gray-400 text-sm line-clamp-2 mb-4 flex-1">
           {product.description}
         </p>
-        <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/10">
-          <span className="text-xl font-bold text-white">₹{product.price}</span>
+        <div className="flex items-center mt-auto pt-4 border-t border-white/10 gap-2">
+          <span className="text-xl font-bold text-white mr-auto">₹{product.price}</span>
+          
+          <button 
+            onClick={(e) => { e.preventDefault(); handleAdd(e); window.location.href='/checkout'; }}
+            className="bg-yellow-600 hover:bg-yellow-500 text-black font-black uppercase tracking-tighter px-4 py-2 rounded-full text-xs transition-colors"
+          >
+            Buy Now
+          </button>
+
           <button 
             onClick={handleAdd}
-            className={`p-3 rounded-full flex items-center justify-center transition-all ${added ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black hover:bg-yellow-400 hover:scale-110'}`}
+            className={`p-2 py-2 rounded-full flex items-center justify-center transition-all ${added ? 'bg-green-500 text-white' : 'bg-white/10 text-white hover:bg-yellow-500 hover:text-black hover:scale-110'}`}
+            title="Add to Cart"
           >
-            {added ? <span className="text-xs font-bold px-2">Added!</span> : <ShoppingBag className="w-5 h-5"/>}
+            {added ? <span className="text-xs font-bold px-3 py-1">Added!</span> : <ShoppingBag className="w-5 h-5 mx-1"/>}
           </button>
         </div>
       </div>

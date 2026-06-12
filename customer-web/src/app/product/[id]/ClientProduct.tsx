@@ -40,7 +40,7 @@ export default function ProductDetails() {
         <ArrowLeft className="w-5 h-5"/> Back to Gallery
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 relative">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative">
         {/* Abstract background glow behind image */}
         <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -48,7 +48,7 @@ export default function ProductDetails() {
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative h-[60vh] w-full rounded-3xl overflow-hidden glass border-white/10 group"
+          className="relative h-[60vh] w-full rounded-3xl overflow-hidden glass border-white/10 group lg:col-span-5"
         >
           <Image 
             src={product.imageUrl} 
@@ -62,7 +62,7 @@ export default function ProductDetails() {
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="flex flex-col justify-center"
+          className="flex flex-col justify-center lg:col-span-4"
         >
           <div className="flex items-center gap-2 mb-4">
             <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase border border-yellow-500/30">
@@ -139,30 +139,66 @@ export default function ProductDetails() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-8 pb-8 border-b border-white/10">
-            <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500">
+        </motion.div>
+
+        {/* Amazon-Style Buy Box */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="lg:col-span-3"
+        >
+          <div className="glass-dark border border-white/10 rounded-2xl p-6 sticky top-28 flex flex-col shadow-2xl">
+            <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-2">
               ₹{product.price}
             </span>
-            <span className="text-gray-400">Tax included</span>
-          </div>
+            <p className="text-gray-400 text-sm mb-4">Tax included. Delivery calculated at checkout.</p>
+            <p className="text-green-400 font-bold mb-6 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5"/> In Stock & Ready to ship
+            </p>
 
-          <button 
-            onClick={handleAddToCart}
-            className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 text-lg font-bold transition-all duration-300 shadow-xl ${
-              isAdded 
-              ? 'bg-green-500 text-white hover:bg-green-600' 
-              : 'bg-yellow-500 text-black hover:bg-yellow-400 hover:scale-[1.02] shadow-[0_0_20px_rgba(251,191,36,0.3)]'
-            }`}
-          >
-            {isAdded ? (
-              'Added to Cart!'
-            ) : (
-              <>
-                <ShoppingBag className="w-6 h-6" /> Add to Collection
-              </>
-            )}
-          </button>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={handleAddToCart}
+                className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all shadow-lg ${
+                  isAdded ? 'bg-green-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+              >
+                {isAdded ? 'Added!' : <><ShoppingBag className="w-4 h-4"/> Add to Cart</>}
+              </button>
+              
+              <button 
+                onClick={(e) => { e.preventDefault(); handleAddToCart(); window.location.href='/checkout'; }}
+                className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl flex items-center justify-center font-black uppercase tracking-tighter text-sm transition-transform hover:scale-[1.02] shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+              >
+                Buy Now
+              </button>
+            </div>
+            
+            <p className="text-xs text-gray-500 mt-6 pt-4 border-t border-white/10 text-center">
+              Secure transactions by MoonGlow Payment Shield.
+            </p>
+          </div>
         </motion.div>
+      </div>
+
+      {/* Related Products Carousel */}
+      <div className="mt-24 w-full">
+         <h2 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: 'var(--font-playfair)' }}>Customers who viewed this item also viewed</h2>
+         <div className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory hide-scrollbar">
+            {products.filter(p => p.category === product.category && p.id !== product.id).map(related => (
+               <div key={related.id} className="min-w-[280px] w-[280px] snap-center glass-dark rounded-2xl p-4 border border-white/5 hover:border-yellow-500/30 transition-colors group cursor-pointer" onClick={() => router.push(`/product/${related.id}`)}>
+                  <div className="relative w-full h-48 rounded-xl overflow-hidden mb-4 bg-black/50">
+                     <Image src={related.imageUrl} alt={related.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white truncate">{related.title}</h3>
+                  <div className="flex items-center justify-between mt-2">
+                     <span className="text-yellow-500 font-bold">₹{related.price}</span>
+                     <span className="text-xs text-gray-400 flex items-center"><Star className="w-3 h-3 text-yellow-500 mr-1"/> 5.0</span>
+                  </div>
+               </div>
+            ))}
+         </div>
       </div>
     </div>
   );

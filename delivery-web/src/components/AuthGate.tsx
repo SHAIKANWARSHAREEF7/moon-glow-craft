@@ -13,10 +13,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = () => {
-      // Bypass login logic completely for testing
-      setIsAuthenticated(true);
-      if (pathname === '/' || pathname === '/signup') {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('moonGlowToken') : null;
+      setIsAuthenticated(!!token);
+
+      if (token && isAuthPage) {
           router.push('/tasks');
+      } else if (!token && !isAuthPage) {
+          router.push('/');
       }
       
       const timer = setTimeout(() => setLoading(false), 1500);
