@@ -84,30 +84,17 @@ export default function Navbar() {
             </Link>
           </motion.div>
           
-          {/* Right: Cart and Profile Icons */}
-          <motion.div variants={itemVariants} className="flex-1 flex items-center justify-end gap-4">
-            <Link href="/cart" className="relative text-gray-400 hover:text-yellow-400 transition-colors duration-300 p-2 hover:bg-white/5 rounded-xl">
-              <ShoppingBag className="w-5 h-5" />
-              <AnimatePresence>
-              {itemCount > 0 && (
-                <motion.span 
-                  initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                  className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]"
-                >
-                  {itemCount}
-                </motion.span>
-              )}
-              </AnimatePresence>
-            </Link>
-            
+          {/* Right: Cart and Profile stacked vertically (Profile on top of Cart) */}
+          <motion.div variants={itemVariants} className="flex-grow-0 flex-shrink-0 flex flex-col items-center justify-center gap-1.5 min-w-[50px] relative z-20">
+            {/* Profile (Chinna Profile Icon - Top) */}
             <div className="relative">
                 <motion.button 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-yellow-500 border-yellow-500 text-black shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:border-yellow-500/50'}`}
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-yellow-500 border-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:border-yellow-500/30'}`}
                 >
-                    <User className="w-5 h-5" />
+                    <User className="w-3.5 h-3.5" />
                 </motion.button>
 
                 <AnimatePresence>
@@ -118,7 +105,7 @@ export default function Navbar() {
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute right-0 mt-4 w-64 bg-[#141416] border border-white/10 rounded-[2rem] shadow-2xl z-20 py-6 px-2 overflow-hidden"
+                                className="absolute right-0 mt-2 w-64 bg-[#141416] border border-white/10 rounded-[2rem] shadow-2xl z-20 py-6 px-2 overflow-hidden"
                             >
                                 <div className="px-6 mb-4">
                                     <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Account Identity</p>
@@ -152,6 +139,21 @@ export default function Navbar() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Cart (Bottom) */}
+            <Link href="/cart" className="relative text-gray-400 hover:text-yellow-400 transition-colors duration-300 p-1 hover:bg-white/5 rounded-lg block">
+              <ShoppingBag className="w-5 h-5" />
+              <AnimatePresence>
+              {itemCount > 0 && (
+                <motion.span 
+                  initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                  className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]"
+                >
+                  {itemCount}
+                </motion.span>
+              )}
+              </AnimatePresence>
+            </Link>
           </motion.div>
         </div>
       </div>

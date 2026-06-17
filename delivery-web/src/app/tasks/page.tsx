@@ -212,25 +212,15 @@ export default function DeliveryTasks() {
           </div>
         </div>
         
-        {/* Right: Cart (Active Deliveries Count), Profile Dropdown */}
-        <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-end gap-3">
-          {/* Cart Icon (Represents Active Deliveries/Tasks) */}
-          <div className="relative text-gray-400 p-2.5 rounded-xl hover:bg-white/5" title="Active Deliveries">
-            <ShoppingCart className="w-5 h-5" />
-            {tasks.filter(t => t.status !== 'Delivered').length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-green-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(0,210,106,0.5)]">
-                {tasks.filter(t => t.status !== 'Delivered').length}
-              </span>
-            )}
-          </div>
-
-          {/* Profile Dropdown */}
+        {/* Right: Cart and Profile stacked vertically (Profile on top of Cart) */}
+        <div className="flex-grow-0 flex-shrink-0 flex flex-col items-center justify-center gap-1.5 min-w-[50px] relative z-25">
+          {/* Profile (Chinna Profile Icon - Top) */}
           <div className="relative">
             <button 
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-green-500 border-green-500 text-black' : 'bg-white/5 border-white/10 text-gray-400 hover:border-green-500/50'}`}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-green-500 border-green-500 text-black' : 'bg-white/5 border-white/10 text-gray-400 hover:border-green-500/30'}`}
             >
-              <User className="w-5 h-5" />
+              <User className="w-3.5 h-3.5" />
             </button>
 
             <AnimatePresence>
@@ -241,7 +231,7 @@ export default function DeliveryTasks() {
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute right-0 mt-3 w-56 bg-[#14171d] border border-white/10 rounded-2xl shadow-2xl z-55 py-4 px-1 overflow-hidden"
+                    className="absolute right-0 mt-2 w-56 bg-[#14171d] border border-white/10 rounded-2xl shadow-2xl z-55 py-4 px-1 overflow-hidden"
                   >
                     <div className="px-4 mb-2 pb-2 border-b border-white/5">
                       <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Delivery Partner</p>
@@ -258,6 +248,16 @@ export default function DeliveryTasks() {
                 </>
               )}
             </AnimatePresence>
+          </div>
+
+          {/* Cart Icon (Bottom) */}
+          <div className="relative text-gray-400 p-1 rounded-lg hover:bg-white/5" title="Active Deliveries">
+            <ShoppingCart className="w-5 h-5" />
+            {tasks.filter(t => t.status !== 'Delivered').length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-green-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(0,210,106,0.5)]">
+                {tasks.filter(t => t.status !== 'Delivered').length}
+              </span>
+            )}
           </div>
         </div>
       </header>

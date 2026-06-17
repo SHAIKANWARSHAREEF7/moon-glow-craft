@@ -217,76 +217,15 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          {/* Right: Cart (Order Tab), Notifications, Profile Dropdown */}
-          <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-end gap-3">
-            {/* Cart Icon (Goes to Orders) */}
-            <button 
-              onClick={() => setActiveTab('orders')} 
-              className="relative text-gray-400 hover:text-blue-400 transition-colors p-2.5 rounded-xl hover:bg-white/5"
-              title="View Orders"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.5)]">
-                  {orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length}
-                </span>
-              )}
-            </button>
-
-            {/* Notification Bell */}
-            <div className="relative">
-              <button 
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`text-gray-400 hover:text-blue-400 transition-colors p-2.5 rounded-xl hover:bg-white/5 relative ${showNotifications ? 'bg-white/5 text-blue-400' : ''}`}
-                title="Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                )}
-              </button>
-              
-              <AnimatePresence>
-                {showNotifications && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 mt-3 w-80 bg-[#14171d] border border-white/10 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 overflow-hidden"
-                    >
-                      <h3 className="font-bold text-white mb-2 flex items-center gap-2 border-b border-white/5 pb-2 text-xs uppercase tracking-widest text-gray-400"><Bell className="w-4 h-4"/> Live Alerts</h3>
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {notifications.length === 0 ? (
-                            <p className="text-gray-500 text-xs text-center py-4">No new alerts</p>
-                        ) : (
-                            notifications.map(n => (
-                                <div 
-                                    key={n.id} 
-                                    onClick={() => { setActiveTab('orders'); setShowNotifications(false); }} 
-                                    className="p-3 bg-white/5 border border-white/5 hover:border-blue-500/30 rounded-xl cursor-pointer transition-colors"
-                                >
-                                    <p className="text-xs text-white font-bold">{n.title}</p>
-                                    <p className="text-[11px] text-blue-400 mt-1">{n.message}</p>
-                                    <p className="text-[9px] text-gray-500 mt-1 text-right">{n.time}</p>
-                                </div>
-                            ))
-                        )}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Profile Dropdown */}
+          {/* Right: Cart and Profile stacked vertically (Profile on top of Cart) */}
+          <div className="flex-grow-0 flex-shrink-0 flex flex-col items-center justify-center gap-1.5 min-w-[60px] relative z-25">
+            {/* Profile (Chinna Profile Icon - Top) */}
             <div className="relative">
               <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-blue-500/50'}`}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-blue-500/30'}`}
               >
-                <User className="w-5 h-5" />
+                <User className="w-3.5 h-3.5" />
               </button>
 
               <AnimatePresence>
@@ -297,7 +236,7 @@ export default function AdminDashboard() {
                       initial={{ opacity: 0, scale: 0.95, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 mt-3 w-56 bg-[#14171d] border border-white/10 rounded-2xl shadow-2xl z-50 py-4 px-1 overflow-hidden"
+                      className="absolute right-0 mt-2 w-56 bg-[#14171d] border border-white/10 rounded-2xl shadow-2xl z-50 py-4 px-1 overflow-hidden"
                     >
                       <div className="px-4 mb-2 pb-2 border-b border-white/5">
                         <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Administrator</p>
@@ -310,6 +249,70 @@ export default function AdminDashboard() {
                   </>
                 )}
               </AnimatePresence>
+            </div>
+
+            {/* Cart & Notifications Row (Bottom) */}
+            <div className="flex items-center gap-2">
+              {/* Cart Icon (Goes to Orders) */}
+              <button 
+                onClick={() => setActiveTab('orders')} 
+                className="relative text-gray-400 hover:text-blue-400 transition-colors p-1 rounded-lg hover:bg-white/5"
+                title="View Orders"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                    {orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Bell */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className={`text-gray-400 hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-white/5 relative ${showNotifications ? 'bg-white/5 text-blue-400' : ''}`}
+                  title="Notifications"
+                >
+                  <Bell className="w-4.5 h-4.5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {showNotifications && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        className="absolute right-0 mt-2 w-80 bg-[#14171d] border border-white/10 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 overflow-hidden"
+                      >
+                        <h3 className="font-bold text-white mb-2 flex items-center gap-2 border-b border-white/5 pb-2 text-xs uppercase tracking-widest text-gray-400"><Bell className="w-4 h-4"/> Live Alerts</h3>
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                          {notifications.length === 0 ? (
+                              <p className="text-gray-500 text-xs text-center py-4">No new alerts</p>
+                          ) : (
+                              notifications.map(n => (
+                                  <div 
+                                      key={n.id} 
+                                      onClick={() => { setActiveTab('orders'); setShowNotifications(false); }} 
+                                      className="p-3 bg-white/5 border border-white/5 hover:border-blue-500/30 rounded-xl cursor-pointer transition-colors"
+                                  >
+                                      <p className="text-xs text-white font-bold">{n.title}</p>
+                                      <p className="text-[11px] text-blue-400 mt-1">{n.message}</p>
+                                      <p className="text-[9px] text-gray-500 mt-1 text-right">{n.time}</p>
+                                  </div>
+                              ))
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </header>
