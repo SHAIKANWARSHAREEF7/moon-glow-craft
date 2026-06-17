@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, ShoppingCart, Package, Truck, 
   ChevronRight, Bell, ArrowRightLeft, Check, 
-  AreaChart, ShieldAlert 
+  AreaChart, ShieldAlert, Menu, User, LogOut, Moon 
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
@@ -15,6 +15,8 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // RED = Pending, BLUE = In Progress, GREEN = Completed
   const [orders, setOrders] = useState<any[]>([]);
@@ -106,6 +108,12 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('moonGlowToken');
+    localStorage.removeItem('moonGlowRole');
+    router.push('/');
+  };
+
   const totalRevenue = orders
     .filter(o => o.status === 'DELIVERED' || o.status === 'COMPLETED')
     .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
@@ -137,17 +145,31 @@ export default function AdminDashboard() {
     <div className="flex h-screen overflow-hidden text-gray-200 bg-admin-dark relative">
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/10 via-admin-dark to-admin-dark pointer-events-none"></div>
 
-      <aside className="w-64 border-r border-white/5 bg-black/60 backdrop-blur-xl flex flex-col z-10 w-fit md:w-64 shrink-0 transition-all">
-        <div className="p-6 border-b border-white/5 flex items-center gap-3">
-          <motion.div 
-            initial={{ rotate: -180, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ type: "spring", duration: 1 }}
-            className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex justify-center items-center font-bold text-white shadow-[0_0_20px_rgba(37,99,235,0.6)]"
-          >MB</motion.div>
-          <span className="font-black text-xl text-white tracking-widest hidden md:block">ADMIN</span>
+      {/* Mobile Sidebar Backdrop */}
+      {showSidebar && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm" 
+          onClick={() => setShowSidebar(false)} 
+        />
+      )}
+
+      {/* Sidebar Navigation */}
+      <aside className={`w-64 border-r border-white/5 bg-black/80 backdrop-blur-xl flex flex-col z-55 shrink-0 transition-all duration-300 fixed md:static h-full ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <div className="p-6 border-b border-white/5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <motion.div 
+              initial={{ rotate: -180, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ type: "spring", duration: 1 }}
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex justify-center items-center font-bold text-white shadow-[0_0_20px_rgba(37,99,235,0.6)]"
+            >MB</motion.div>
+            <span className="font-black text-xl text-white tracking-widest">ADMIN</span>
+          </div>
+          <button onClick={() => setShowSidebar(false)} className="text-gray-400 hover:text-white md:hidden p-1 rounded-lg hover:bg-white/5">
+            <ChevronRight className="w-6 h-6 rotate-180" />
+          </button>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-2 relative overflow-y-auto">
           {['overview', 'orders', 'products', 'drivers'].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className="w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3 relative overflow-hidden group">
+            <button key={tab} onClick={() => { setActiveTab(tab); setShowSidebar(false); }} className="w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3 relative overflow-hidden group">
               {activeTab === tab && (
                 <motion.div layoutId="activeTabPill" className="absolute inset-0 bg-blue-600/20 border border-blue-400/30 rounded-2xl z-0 shadow-[inset_0_0_15px_rgba(59,130,246,0.2)]" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
               )}
@@ -158,72 +180,137 @@ export default function AdminDashboard() {
                   {tab === 'products' && <Package className="w-6 h-6 md:w-5 md:h-5"/>}
                   {tab === 'drivers' && <Truck className="w-6 h-6 md:w-5 md:h-5"/>}
                 </div>
-                <span className="tracking-wide hidden md:block">{tab}</span>
-                {activeTab === tab && <ChevronRight className="w-4 h-4 ml-auto text-blue-400 hidden md:block" />}
+                <span className="tracking-wide">{tab}</span>
+                {activeTab === tab && <ChevronRight className="w-4 h-4 ml-auto text-blue-400" />}
               </span>
             </button>
           ))}
         </nav>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 relative z-10 ios-scroll">
-        <header className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 pt-4">
-          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex flex-col">
-            <AnimatePresence mode="popLayout">
-              <motion.h1 
-                key={activeTab}
-                initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }}
-                className="text-3xl md:text-4xl font-black text-white capitalize drop-shadow-md tracking-tight"
-              >
-                {activeTab} Panel
-              </motion.h1>
-            </AnimatePresence>
-            <p className="text-gray-400 text-sm mt-2 font-medium">Control Center • Monitoring Real-Time Sync</p>
-          </motion.div>
-          
-          <div className="relative">
-            <motion.button 
-              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="w-12 h-12 rounded-full border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors relative shadow-lg"
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 relative z-10 ios-scroll pt-28">
+        {/* Standard Top Header */}
+        <header className="fixed top-0 left-0 right-0 h-20 bg-admin-dark/80 backdrop-blur-md border-b border-white/5 z-40 px-4 md:px-8 flex justify-between items-center">
+          {/* Left: Hamburger Menu (Three Lines Style) */}
+          <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-start">
+            <button 
+              onClick={() => setShowSidebar(true)} 
+              className="text-gray-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5"
+              aria-label="Open Menu"
             >
-              <motion.div animate={{ rotate: [0, 10, -10, 10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
-                <Bell className="w-5 h-5 text-gray-300"/>
-              </motion.div>
-              <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-yellow-500 rounded-full animate-ping border border-admin-dark"></span>
-            </motion.button>
-            
-            <AnimatePresence>
-              {showNotifications && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8, y: 10, transformOrigin: 'top right' }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  className="absolute top-16 right-0 w-80 bg-[#1c1f26] border border-white/10 rounded-2xl p-4 shadow-[0_20px_60px_rgba(0,0,0,0.8)] z-50 origin-top-right overflow-hidden"
-                >
-                    <h3 className="font-bold text-white mb-3 flex items-center gap-2 border-b border-white/5 pb-3 px-2 text-sm uppercase tracking-widest text-gray-400"><Bell className="w-4 h-4"/> Live Alerts</h3>
-                  <div className="space-y-2 relative z-10 max-h-60 overflow-y-auto pr-2">
-                    {notifications.length === 0 ? (
-                        <p className="text-gray-500 text-xs text-center py-4">No new alerts</p>
-                    ) : (
-                        notifications.map(n => (
-                            <motion.div 
-                                key={n.id} 
-                                onClick={() => { setActiveTab('orders'); setShowNotifications(false); }} 
-                                whileHover={{ x: 4, backgroundColor: 'rgba(59, 130, 246, 0.1)' }} 
-                                className="p-4 bg-white/5 border border-white/5 rounded-xl cursor-pointer transition-colors mt-2"
-                            >
-                                <p className="text-sm text-white font-bold tracking-wide">{n.title}</p>
-                                <p className="text-xs text-blue-400 mt-1">{n.message}</p>
-                                <p className="text-[10px] text-gray-500 mt-2">{n.time}</p>
-                            </motion.div>
-                        ))
-                    )}
-                  </div>
-                </motion.div>
+               <Menu className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Middle: Centered Brand Name */}
+          <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-center">
+            <div className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                <Moon className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-black text-white tracking-widest hidden sm:block">
+                MOON<span className="text-blue-400">GLOW</span> <span className="bg-blue-500/20 text-blue-400 text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full border border-blue-500/30 ml-1">ADMIN</span>
+              </span>
+              <span className="text-base font-black text-white tracking-widest sm:hidden">
+                MG<span className="text-blue-400">ADMIN</span>
+              </span>
+            </div>
+          </div>
+          
+          {/* Right: Cart (Order Tab), Notifications, Profile Dropdown */}
+          <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-end gap-3">
+            {/* Cart Icon (Goes to Orders) */}
+            <button 
+              onClick={() => setActiveTab('orders')} 
+              className="relative text-gray-400 hover:text-blue-400 transition-colors p-2.5 rounded-xl hover:bg-white/5"
+              title="View Orders"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                  {orders.filter(o => o.status === 'PENDING' || o.delivery?.status === 'Pending Assignment').length}
+                </span>
               )}
-            </AnimatePresence>
+            </button>
+
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`text-gray-400 hover:text-blue-400 transition-colors p-2.5 rounded-xl hover:bg-white/5 relative ${showNotifications ? 'bg-white/5 text-blue-400' : ''}`}
+                title="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                )}
+              </button>
+              
+              <AnimatePresence>
+                {showNotifications && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute right-0 mt-3 w-80 bg-[#14171d] border border-white/10 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 overflow-hidden"
+                    >
+                      <h3 className="font-bold text-white mb-2 flex items-center gap-2 border-b border-white/5 pb-2 text-xs uppercase tracking-widest text-gray-400"><Bell className="w-4 h-4"/> Live Alerts</h3>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        {notifications.length === 0 ? (
+                            <p className="text-gray-500 text-xs text-center py-4">No new alerts</p>
+                        ) : (
+                            notifications.map(n => (
+                                <div 
+                                    key={n.id} 
+                                    onClick={() => { setActiveTab('orders'); setShowNotifications(false); }} 
+                                    className="p-3 bg-white/5 border border-white/5 hover:border-blue-500/30 rounded-xl cursor-pointer transition-colors"
+                                >
+                                    <p className="text-xs text-white font-bold">{n.title}</p>
+                                    <p className="text-[11px] text-blue-400 mt-1">{n.message}</p>
+                                    <p className="text-[9px] text-gray-500 mt-1 text-right">{n.time}</p>
+                                </div>
+                            ))
+                        )}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:border-blue-500/50'}`}
+              >
+                <User className="w-5 h-5" />
+              </button>
+
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute right-0 mt-3 w-56 bg-[#14171d] border border-white/10 rounded-2xl shadow-2xl z-50 py-4 px-1 overflow-hidden"
+                    >
+                      <div className="px-4 mb-2 pb-2 border-b border-white/5">
+                        <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Administrator</p>
+                        <p className="text-white text-sm font-bold truncate">shaikanwar7204</p>
+                      </div>
+                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+                        <LogOut className="w-4 h-4" /> Log Out Operations
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 

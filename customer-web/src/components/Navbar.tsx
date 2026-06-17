@@ -59,60 +59,40 @@ export default function Navbar() {
       className="fixed top-0 left-0 w-full z-50 glass-dark border-b border-white/5"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20 gap-4">
+        <div className="flex justify-between items-center h-20">
           
-          <motion.div variants={itemVariants} className="flex items-center gap-4">
-            {/* Hamburger Sidebar Trigger */}
-            <button onClick={() => setShowSidebar(true)} className="text-gray-400 hover:text-white transition-colors">
+          {/* Left: Hamburger Menu (Three Lines Style) */}
+          <motion.div variants={itemVariants} className="flex-1 flex items-center justify-start">
+            <button 
+              onClick={() => setShowSidebar(true)} 
+              className="text-gray-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5"
+              aria-label="Open Menu"
+            >
                <Menu className="w-6 h-6" />
             </button>
-            <Link href="/" className="flex items-center gap-3 group cursor-pointer">
-              <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform shadow-[0_0_20px_rgba(234,179,8,0.3)]">
-                <Moon className="w-6 h-6 text-black" />
+          </motion.div>
+
+          {/* Middle: Website Name (Centered) */}
+          <motion.div variants={itemVariants} className="flex-1 flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-2 group cursor-pointer">
+              <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-yellow-500 rounded-lg flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                <Moon className="w-4 h-4 text-white" />
               </div>
-              <span className="text-xl font-black text-white tracking-tighter hidden sm:block" style={{ fontFamily: 'var(--font-playfair)' }}>
-                MOON<span className="text-yellow-400">GLOW</span>
+              <span className="text-xl font-black text-white tracking-widest" style={{ fontFamily: 'var(--font-playfair)' }}>
+                MOON<span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-200">GLOW</span>
               </span>
             </Link>
           </motion.div>
-
-          {/* Central Search Bar (Amazon Style) */}
-          <motion.div variants={itemVariants} className="flex-grow max-w-2xl hidden md:block mx-4">
-            <form onSubmit={handleSearch} className="flex w-full">
-               <select className="bg-[#1a1a1c] border border-white/10 text-gray-300 text-sm rounded-l-md px-3 outline-none hover:bg-white/5 transition-colors focus:border-yellow-500 cursor-pointer">
-                  <option value="all">All</option>
-                  <option value="chocolates">Chocolates</option>
-                  <option value="keychains">Keychains</option>
-               </select>
-               <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search Moon Glow Craft"
-                  className="flex-grow px-4 py-2 bg-white text-black outline-none font-medium placeholder-gray-500"
-               />
-               <button type="submit" className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 rounded-r-md transition-colors flex items-center justify-center">
-                  <Search className="w-5 h-5"/>
-               </button>
-            </form>
-          </motion.div>
           
-          <motion.div variants={itemVariants} className="flex items-center gap-6">
-            <Link href="/#featured" className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors duration-300 hidden md:block">
-              Collection
-            </Link>
-            
-            <Link href="/track" className="text-gray-400 hover:text-yellow-400 transition-colors duration-300 flex items-center gap-2 group text-xs font-bold uppercase tracking-widest">
-              <Map className="w-4 h-4 group-hover:-translate-y-1 transition-transform"/> <span className="hidden md:inline">Track</span>
-            </Link>
-            
-            <Link href="/cart" className="relative text-gray-400 hover:text-yellow-400 transition-colors duration-300 p-2">
+          {/* Right: Cart and Profile Icons */}
+          <motion.div variants={itemVariants} className="flex-1 flex items-center justify-end gap-4">
+            <Link href="/cart" className="relative text-gray-400 hover:text-yellow-400 transition-colors duration-300 p-2 hover:bg-white/5 rounded-xl">
               <ShoppingBag className="w-5 h-5" />
               <AnimatePresence>
               {itemCount > 0 && (
                 <motion.span 
                   initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                  className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]"
+                  className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]"
                 >
                   {itemCount}
                 </motion.span>
@@ -202,6 +182,20 @@ export default function Navbar() {
              </div>
              
              <div className="flex-grow overflow-y-auto py-4">
+                <div className="px-6 mb-6">
+                   <form onSubmit={handleSearch} className="flex w-full relative">
+                      <input 
+                         type="text" 
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         placeholder="Search Moon Glow..."
+                         className="w-full bg-[#1a1a1c] border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white focus:outline-none focus:border-yellow-500 text-sm font-light"
+                      />
+                      <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                         <Search className="w-4 h-4"/>
+                      </button>
+                   </form>
+                </div>
                 <div className="px-6 py-2">
                    <h3 className="text-xl font-bold text-white mb-4 tracking-tighter">Shop by Category</h3>
                    <ul className="space-y-4">

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Phone, CheckCircle2, Navigation2, ScanLine, DollarSign, Store, KeyRound, Bike, Loader2 } from 'lucide-react';
+import { MapPin, Phone, CheckCircle2, Navigation2, ScanLine, DollarSign, Store, KeyRound, Bike, Loader2, Menu, User, LogOut, Moon, ShoppingCart } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moonglow-backend.onrender.com/api';
 import Head from 'next/head';
@@ -10,6 +10,8 @@ import Head from 'next/head';
 export default function DeliveryTasks() {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
 
@@ -33,6 +35,12 @@ export default function DeliveryTasks() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('moonGlowToken');
+    localStorage.removeItem('moonGlowRole');
+    router.push('/');
   };
 
   useEffect(() => {
@@ -110,30 +118,149 @@ export default function DeliveryTasks() {
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0a] overflow-hidden font-sans">
       
-      <motion.header 
-        initial={{ y: -50 }} animate={{ y: 0 }} 
-        className="px-5 py-4 bg-[#111111] border-b border-white/10 flex justify-between items-center sticky top-0 z-50 shadow-2xl"
-      >
-        <div className="flex items-center gap-4">
-          <div className="relative cursor-pointer" onClick={() => setIsOnline(!isOnline)}>
-            <div className={`w-12 h-12 rounded-full flex justify-center items-center shadow-lg transition-colors ${isOnline ? 'bg-green-500' : 'bg-gray-700'}`}>
-              <Bike className="w-6 h-6 text-white" />
+      {/* Mobile Sidebar Drawer Backdrop */}
+      {showSidebar && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-40 backdrop-blur-sm" 
+          onClick={() => setShowSidebar(false)} 
+        />
+      )}
+
+      {/* Sidebar Navigation */}
+      <AnimatePresence>
+      {showSidebar && (
+        <motion.aside 
+          initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+          transition={{ type: 'tween', duration: 0.3 }}
+          className="fixed top-0 left-0 h-full w-80 bg-[#111113] border-r border-white/10 flex flex-col z-50 shadow-2xl"
+        >
+          <div className="p-6 border-b border-white/5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex justify-center items-center text-black font-black">
+                <Bike className="w-6 h-6 text-black" />
+              </div>
+              <span className="font-black text-xl text-white tracking-widest">DRIVER</span>
             </div>
-            <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#111111] rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+            <button onClick={() => setShowSidebar(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5">
+              <ChevronRight className="w-6 h-6 rotate-180" />
+            </button>
           </div>
-          <div onClick={() => setIsOnline(!isOnline)} className="cursor-pointer">
-            <h1 className="text-white font-black text-lg uppercase tracking-wider">Driver X</h1>
-            <p className={`font-bold text-[10px] tracking-[0.2em] ${isOnline ? 'text-green-500' : 'text-red-500'}`}>{isOnline ? 'ONLINE NOW' : 'OFFLINE'}</p>
+
+          <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto">
+            {/* Status Switcher */}
+            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl">
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3">Duty Status</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-bold">{isOnline ? 'Online & Available' : 'Offline'}</p>
+                  <p className="text-xs text-gray-500">Toggle switch to change</p>
+                </div>
+                <button 
+                  onClick={() => setIsOnline(!isOnline)} 
+                  className={`relative w-12 h-6 rounded-full p-1 transition-colors duration-300 focus:outline-none ${isOnline ? 'bg-green-500' : 'bg-gray-700'}`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-300 ${isOnline ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Earnings Stats */}
+            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl">
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Earnings Today</p>
+              <div className="flex items-center gap-1">
+                <DollarSign className="w-5 h-5 text-green-400" />
+                <span className="text-2xl font-black text-white">{earnings.toLocaleString()}</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2 font-bold uppercase tracking-wider">10% COMMISSION RATE</p>
+            </div>
+            
+            <div className="h-[1px] bg-white/5" />
+
+            <button onClick={handleLogout} className="w-full py-4 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 font-black uppercase tracking-widest text-xs rounded-xl transition-all flex justify-center items-center gap-2">
+              <LogOut className="w-4 h-4" /> Go Offline & Log Out
+            </button>
+          </div>
+        </motion.aside>
+      )}
+      </AnimatePresence>
+
+      {/* Standard Top Header */}
+      <header className="h-20 bg-[#111113]/80 backdrop-blur-md border-b border-white/10 z-40 px-4 flex justify-between items-center sticky top-0">
+        {/* Left: Hamburger Menu (Three Lines Style) */}
+        <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-start">
+          <button 
+            onClick={() => setShowSidebar(true)} 
+            className="text-gray-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5"
+            aria-label="Open Menu"
+          >
+             <Menu className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Middle: Centered Brand Name */}
+        <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-center">
+          <div className="flex items-center gap-2 group">
+            <div className="w-8 h-8 bg-gradient-to-tr from-green-500 to-emerald-600 rounded-lg flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+              <Bike className="w-4 h-4 text-black" />
+            </div>
+            <span className="text-base font-black text-white tracking-widest hidden sm:block">
+              MOON<span className="text-green-400">GLOW</span> <span className="bg-green-500/20 text-green-400 text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full border border-green-500/30 ml-1">DELIVERY</span>
+            </span>
+            <span className="text-sm font-black text-white tracking-widest sm:hidden">
+              MG<span className="text-green-400">DRIVER</span>
+            </span>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Earnings today</p>
-          <div className="flex items-center justify-end gap-1">
-            <DollarSign className="w-4 h-4 text-green-500"/>
-            <p className="text-white font-black text-xl">{earnings.toLocaleString()}</p>
+        
+        {/* Right: Cart (Active Deliveries Count), Profile Dropdown */}
+        <div className="flex-grow flex-shrink-0 flex-1 flex items-center justify-end gap-3">
+          {/* Cart Icon (Represents Active Deliveries/Tasks) */}
+          <div className="relative text-gray-400 p-2.5 rounded-xl hover:bg-white/5" title="Active Deliveries">
+            <ShoppingCart className="w-5 h-5" />
+            {tasks.filter(t => t.status !== 'Delivered').length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-green-500 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-[0_0_10px_rgba(0,210,106,0.5)]">
+                {tasks.filter(t => t.status !== 'Delivered').length}
+              </span>
+            )}
+          </div>
+
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${showProfileMenu ? 'bg-green-500 border-green-500 text-black' : 'bg-white/5 border-white/10 text-gray-400 hover:border-green-500/50'}`}
+            >
+              <User className="w-5 h-5" />
+            </button>
+
+            <AnimatePresence>
+              {showProfileMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 mt-3 w-56 bg-[#14171d] border border-white/10 rounded-2xl shadow-2xl z-55 py-4 px-1 overflow-hidden"
+                  >
+                    <div className="px-4 mb-2 pb-2 border-b border-white/5">
+                      <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Delivery Partner</p>
+                      <p className="text-white text-sm font-bold truncate">Driver X</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{isOnline ? 'Active' : 'Offline'}</span>
+                      </div>
+                    </div>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+                      <LogOut className="w-4 h-4" /> Go Offline & Log Out
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </motion.header>
+      </header>
 
       {/* Dark Map */}
       <div className="h-64 relative border-b border-white/5 bg-black">
