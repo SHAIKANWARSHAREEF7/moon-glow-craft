@@ -8,7 +8,9 @@ export interface AuthRequest extends Request {
     };
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+import { prisma } from '../db';
+
+export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -19,6 +21,20 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as { userId: string, role: string };
+        
+        const dbUser = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { status: true }
+        });
+
+        if (!dbUser) {
+            return res.status(401).json({ error: 'Unauthorized: User not found' });
+        }
+
+        if (dbUser.status === 'SUSPENDED') {
+            return res.status(403).json({ error: 'Forbidden: Your account has been suspended' });
+        }
+
         req.user = decoded;
         next();
     } catch (err) {

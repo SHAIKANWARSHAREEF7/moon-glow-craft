@@ -9,94 +9,87 @@ datasource db {
 
 enum Role {
   CUSTOMER
+  SELLER
   ADMIN
-  DRIVER
 }
 
-enum Category {
-  CHOCOLATE
-  KEYCHAIN
-  WALLMOON
-  THREAD_ART
-  OTHER
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 enum OrderStatus {
-  PLACED
-  PREPARING
-  OUT_FOR_DELIVERY
+  PENDING
+  PROCESSING
+  SHIPPED
   DELIVERED
+  CANCELLED
 }
 
-enum PaymentMethod {
-  RAZORPAY
-  UPI
-  CARD
-  CASH_ON_DELIVERY
+enum TransactionStatus {
+  SUCCESS
+  FAILED
+  PENDING
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(CUSTOMER)
-  isVerified Boolean  @default(false)
+  id         String     @id @default(uuid())
+  name       String
+  email      String     @unique
+  password   String
+  role       Role       @default(CUSTOMER)
+  status     UserStatus @default(ACTIVE)
+  address    String?
+  phone      String?
+  isVerified Boolean    @default(false)
   otp        String?
   otpExpiry  DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
-  orders     Order[]
-  deliveries Delivery[]
+  products     Product[]     @relation("SellerProducts")
+  orders       Order[]       @relation("CustomerOrders")
+  transactions Transaction[] @relation("CustomerTransactions")
 }
 
 model Product {
-  id             String   @id @default(uuid())
-  title          String
-  description    String?
-  price          Float
-  inventoryCount Int      @default(0)
-  imageUrl       String?
-  category       Category @default(OTHER)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  orderItems OrderItem[]
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  price       Float
+  category    String   @default("OTHER")
+  stock       Int      @default(0)
+  imageUrl    String?
+  sellerId    String
+  seller      User     @relation("SellerProducts", fields: [sellerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Order {
-  id            String        @id @default(uuid())
-  customerId    String
-  customer      User          @relation(fields: [customerId], references: [id])
-  totalAmount   Float
-  status        OrderStatus   @default(PLACED)
-  paymentMethod PaymentMethod @default(RAZORPAY)
+  id              String      @id @default(uuid())
+  customerId      String
+  customer        User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  items           Json        // Array of: { productId, title, quantity, price }
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
   shippingAddress String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  paymentId       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  items    OrderItem[]
-  delivery Delivery?
+  transaction     Transaction?
 }
 
-model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-  price     Float
-}
-
-model Delivery {
-  id          String   @id @default(uuid())
-  orderId     String   @unique
-  order       Order    @relation(fields: [orderId], references: [id])
-  driverId    String?
-  driver      User?    @relation(fields: [driverId], references: [id])
-  status      String   @default("Pending Assignment") // e.g., "Picked Up", "Arrived", "Delivered"
-  assignedAt  DateTime?
-  deliveredAt DateTime?
+model Transaction {
+  id                 String            @id @default(uuid())
+  orderId            String            @unique
+  order              Order             @relation(fields: [orderId], references: [id])
+  customerId         String
+  customer           User              @relation("CustomerTransactions", fields: [customerId], references: [id])
+  amount             Float
+  paymentGateway     String            // Stripe or Razorpay
+  transactionStatus  TransactionStatus @default(PENDING)
+  gatewayReferenceId String?
+  createdAt          DateTime          @default(now())
 }

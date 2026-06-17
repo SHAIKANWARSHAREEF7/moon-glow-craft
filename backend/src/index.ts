@@ -6,7 +6,7 @@ import { setupSockets } from './sockets';
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
-import deliveryRoutes from './routes/deliveries';
+import adminRoutes from './routes/admin';
 
 
 
@@ -24,7 +24,7 @@ setupSockets(server);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/deliveries', deliveryRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });

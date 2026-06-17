@@ -1,131 +1,342 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { prisma } from '../db';
 import { AuthRequest, authenticate, authorizeRole } from '../middleware/auth';
-import { updateOrderStatus } from '../sockets';
+import { io, updateOrderStatus } from '../sockets';
+import { sendInvoiceEmail, sendOrderStatusEmail } from '../lib/email';
 
 const router = Router();
 
-// Create a new order (Customer)
-router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
+// Create a new order (Customer only)
+router.post('/', authenticate, authorizeRole(['CUSTOMER']), async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
         
-        const { items, paymentMethod, shippingAddress } = req.body; // items: [{ productId, quantity }]
+        const { items, shippingAddress, paymentGateway } = req.body; // items: [{ productId, quantity }], paymentGateway: STRIPE or RAZORPAY
         
-        if (!items || items.length === 0) {
+        if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ error: 'Order must contain items' });
         }
+        if (!shippingAddress) {
+            return res.status(400).json({ error: 'Shipping address is required' });
+        }
 
+        // Validate products, check stock, and compile JSON array of items
+        const orderItemsData: any[] = [];
         let totalAmount = 0;
-        const orderItemsData = [];
 
-        // Validate products and calculate total
         for (const item of items) {
             const product = await prisma.product.findUnique({ where: { id: item.productId } });
-            if (!product) return res.status(404).json({ error: `Product ${item.productId} not found` });
-            if (product.inventoryCount < item.quantity) {
-                return res.status(400).json({ error: `Insufficient inventory for ${product.title}` });
+            if (!product) {
+                return res.status(404).json({ error: `Product with ID ${item.productId} not found` });
             }
-            
+            if (product.stock < item.quantity) {
+                return res.status(400).json({ error: `Insufficient stock for product: ${product.title}` });
+            }
+
             totalAmount += product.price * item.quantity;
             orderItemsData.push({
                 productId: product.id,
+                title: product.title,
                 quantity: item.quantity,
-                price: product.price
-            });
-
-            // Decrease inventory
-            await prisma.product.update({
-                where: { id: product.id },
-                data: { inventoryCount: product.inventoryCount - item.quantity }
+                price: product.price,
+                imageUrl: product.imageUrl
             });
         }
 
-        const order = await prisma.order.create({
-            data: {
-                customerId: req.user.userId,
-                totalAmount,
-                paymentMethod: paymentMethod || 'RAZORPAY',
-                shippingAddress,
-                items: {
-                    create: orderItemsData
+        // Execute DB operations in a transaction: decrement stock, create order, create transaction ledger
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Decrement stock
+            for (const item of items) {
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: { decrement: item.quantity } }
+                });
+            }
+
+            // 2. Create Order
+            const order = await tx.order.create({
+                data: {
+                    customerId: req.user!.userId,
+                    items: orderItemsData,
+                    totalAmount,
+                    shippingAddress,
+                    status: 'PENDING'
                 },
-                delivery: {
-                    create: {
-                        status: 'Pending Assignment'
+                include: {
+                    customer: {
+                        select: { name: true, email: true }
                     }
                 }
-            },
-            include: { items: { include: { product: true } }, delivery: true, customer: { select: { name: true, email: true } } }
+            });
+
+            // 3. Create Transaction record
+            const transaction = await tx.transaction.create({
+                data: {
+                    orderId: order.id,
+                    customerId: req.user!.userId,
+                    amount: totalAmount,
+                    paymentGateway: paymentGateway || 'STRIPE',
+                    transactionStatus: 'PENDING'
+                }
+            });
+
+            return { order, transaction };
         });
 
-        // Real-time Notification for Admin
-        const { io } = require('../sockets');
+        // Real-time Notification
         if (io) {
-            io.emit('newOrder', order);
+            io.emit('newOrder', { ...result.order, transaction: result.transaction });
         }
 
-        res.status(201).json(order);
+        res.status(201).json({
+            message: 'Order created successfully. Pending payment.',
+            orderId: result.order.id,
+            totalAmount: result.order.totalAmount,
+            transactionId: result.transaction.id
+        });
     } catch (error) {
-        console.error('Order creation error:', error);
-        res.status(500).json({ error: 'Failed to create order' });
+        console.error('Order placement error:', error);
+        res.status(500).json({ error: 'Failed to place order' });
     }
 });
 
-// Get active orders for a customer
-router.get('/my-orders', authenticate, async (req: AuthRequest, res: Response) => {
+// Verify payment and activate order status (Public/Webhooks or Customer confirmation)
+router.post('/verify-payment', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { orderId, transactionStatus, gatewayReferenceId } = req.body;
+        
+        if (!orderId || !transactionStatus) {
+            return res.status(400).json({ error: 'Missing required parameters' });
+        }
+
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { customer: { select: { name: true, email: true } }, transaction: true }
+        });
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        if (transactionStatus === 'SUCCESS') {
+            // Update order status to PROCESSING and transaction to SUCCESS
+            const updatedResult = await prisma.$transaction(async (tx) => {
+                const updatedOrder = await tx.order.update({
+                    where: { id: orderId },
+                    data: {
+                        status: 'PROCESSING',
+                        paymentId: gatewayReferenceId
+                    }
+                });
+
+                const updatedTx = await tx.transaction.update({
+                    where: { orderId },
+                    data: {
+                        transactionStatus: 'SUCCESS',
+                        gatewayReferenceId
+                    }
+                });
+
+                return { order: updatedOrder, transaction: updatedTx };
+            });
+
+            // Trigger Invoice Email
+            try {
+                const items = order.items as any[];
+                await sendInvoiceEmail(
+                    order.customer.email,
+                    orderId,
+                    items,
+                    order.totalAmount,
+                    order.shippingAddress
+                );
+            } catch (emailErr) {
+                console.error('Failed to send invoice email:', emailErr);
+            }
+
+            // Notify real-time
+            updateOrderStatus(orderId, 'PROCESSING');
+            if (io) {
+                io.emit('paymentSuccess', { orderId, gatewayReferenceId });
+            }
+
+            res.json({ message: 'Payment verified successfully. Order is processing.', order: updatedResult.order });
+        } else {
+            // Payment failed: Cancel order, fail transaction, and restore inventory stock
+            const updatedResult = await prisma.$transaction(async (tx) => {
+                const updatedOrder = await tx.order.update({
+                    where: { id: orderId },
+                    data: { status: 'CANCELLED' }
+                });
+
+                const updatedTx = await tx.transaction.update({
+                    where: { orderId },
+                    data: {
+                        transactionStatus: 'FAILED',
+                        gatewayReferenceId
+                    }
+                });
+
+                // Restore stock
+                const items = order.items as any[];
+                if (Array.isArray(items)) {
+                    for (const item of items) {
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: { stock: { increment: item.quantity } }
+                        });
+                    }
+                }
+
+                return { order: updatedOrder, transaction: updatedTx };
+            });
+
+            updateOrderStatus(orderId, 'CANCELLED');
+            res.json({ message: 'Payment failed. Order has been cancelled.', order: updatedResult.order });
+        }
+    } catch (error) {
+        console.error('Payment verification error:', error);
+        res.status(500).json({ error: 'Failed to verify payment' });
+    }
+});
+
+// Get customer's own order history (Customer only)
+router.get('/my-orders', authenticate, authorizeRole(['CUSTOMER']), async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
         const orders = await prisma.order.findMany({
             where: { customerId: req.user.userId },
-            include: { items: { include: { product: true } }, delivery: true },
+            include: { transaction: true },
             orderBy: { createdAt: 'desc' }
         });
         res.json(orders);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch orders' });
+        res.status(500).json({ error: 'Failed to fetch customer orders' });
     }
 });
 
-// Get all orders (Admin)
-router.get('/', authenticate, authorizeRole(['ADMIN']), async (req: Request, res: Response) => {
+// Get seller-specific orders (Seller only)
+router.get('/seller', authenticate, authorizeRole(['SELLER']), async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+        const sellerId = req.user.userId;
+
+        // Fetch seller products
+        const sellerProducts = await prisma.product.findMany({
+            where: { sellerId },
+            select: { id: true }
+        });
+        const sellerProductIds = new Set(sellerProducts.map(p => p.id));
+
+        // Fetch all orders
+        const orders = await prisma.order.findMany({
+            include: {
+                customer: {
+                    select: { name: true, email: true, phone: true, address: true }
+                },
+                transaction: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // Filter orders containing seller items
+        const sellerOrders = orders.filter((order: any) => {
+            const items = order.items as any[];
+            if (!Array.isArray(items)) return false;
+            return items.some(item => sellerProductIds.has(item.productId));
+        }).map((order: any) => {
+            const items = order.items as any[];
+            const sellerItems = items.filter(item => sellerProductIds.has(item.productId));
+            return {
+                ...order,
+                items: sellerItems // Filter items so seller only sees their own products in the order details
+            };
+        });
+
+        res.json(sellerOrders);
+    } catch (error) {
+        console.error('Failed to fetch seller orders:', error);
+        res.status(500).json({ error: 'Failed to fetch seller orders' });
+    }
+});
+
+// Get all orders (Admin only)
+router.get('/', authenticate, authorizeRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
     try {
         const orders = await prisma.order.findMany({
-            include: { items: { include: { product: true } }, delivery: true, customer: { select: { name: true, email: true } } },
+            include: {
+                customer: {
+                    select: { name: true, email: true, phone: true }
+                },
+                transaction: true
+            },
             orderBy: { createdAt: 'desc' }
         });
         res.json(orders);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch orders' });
+        res.status(500).json({ error: 'Failed to fetch global orders' });
     }
 });
 
-// Assign order to delivery driver (Admin)
-router.put('/:id/assign', authenticate, authorizeRole(['ADMIN']), async (req: Request, res: Response) => {
+// Update order status (Seller or Admin)
+router.put('/:id/status', authenticate, authorizeRole(['SELLER', 'ADMIN']), async (req: AuthRequest, res: Response) => {
     try {
-        const { driverId } = req.body;
+        if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
         const orderId = String(req.params.id);
+        const status = String(req.body.status);
 
-        const delivery = await prisma.delivery.update({
-            where: { orderId: orderId },
-            data: { 
-                driverId, 
-                status: 'Assigned',
-                assignedAt: new Date()
-            }
-        });
+        if (!['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid order status' });
+        }
 
-        const order = await prisma.order.update({
+        const order = await prisma.order.findUnique({
             where: { id: orderId },
-            data: { status: 'PREPARING' } // Move to preparing when assigned
+            include: { customer: { select: { name: true, email: true } } }
+        }) as any;
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Seller validation: must own at least one item in the order
+        if (req.user.role === 'SELLER') {
+            const sellerProducts = await prisma.product.findMany({
+                where: { sellerId: req.user.userId },
+                select: { id: true }
+            });
+            const sellerProductIds = new Set(sellerProducts.map(p => p.id));
+            const items = order.items as any[];
+            const hasSellerProduct = Array.isArray(items) && items.some(item => sellerProductIds.has(item.productId));
+
+            if (!hasSellerProduct) {
+                return res.status(403).json({ error: 'Forbidden: Order does not contain any of your products' });
+            }
+
+            // Sellers can only transition to SHIPPED or DELIVERED
+            if (!['SHIPPED', 'DELIVERED'].includes(status)) {
+                return res.status(400).json({ error: 'Sellers can only set status to SHIPPED or DELIVERED' });
+            }
+        }
+
+        const updatedOrder = await prisma.order.update({
+            where: { id: orderId },
+            data: { status: status as any }
         });
 
-        updateOrderStatus(orderId, 'PREPARING')
+        // Trigger Status Email Notification
+        try {
+            await sendOrderStatusEmail(order.customer.email, orderId, status);
+        } catch (emailErr) {
+            console.error('Failed to send status email:', emailErr);
+        }
 
-        res.json({ order, delivery });
+        // Notify client real-time
+        updateOrderStatus(orderId, status);
+
+        res.json({ message: 'Order status updated successfully', order: updatedOrder });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to assign driver' });
+        console.error('Order status update error:', error);
+        res.status(500).json({ error: 'Failed to update order status' });
     }
 });
 

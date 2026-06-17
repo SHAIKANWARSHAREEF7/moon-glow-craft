@@ -3,13 +3,13 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db';
 import { AuthRequest, authenticate } from '../middleware/auth';
-import { generateOTP, sendOTPByEmail } from '../lib/email';
+import { generateOTP, sendOTPByEmail, sendWelcomeEmail } from '../lib/email';
 
 const router = Router();
 
 router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role, address, phone } = req.body;
         
         if (!email || !password || !name) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -23,7 +23,7 @@ router.post('/register', async (req: Request, res: Response) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const validRole = role && ['CUSTOMER', 'ADMIN', 'DRIVER'].includes(role) ? role : 'CUSTOMER';
+        const validRole = role && ['CUSTOMER', 'ADMIN', 'SELLER'].includes(role) ? role : 'CUSTOMER';
 
         const user = await prisma.user.create({
             data: {
@@ -31,6 +31,9 @@ router.post('/register', async (req: Request, res: Response) => {
                 email,
                 password: hashedPassword,
                 role: validRole as any,
+                address,
+                phone,
+                status: 'ACTIVE',
                 isVerified: false // New users start unverified
             }
         });
@@ -89,6 +92,10 @@ router.post('/login', async (req: Request, res: Response) => {
             }
         }
 
+        if (user.status === 'SUSPENDED') {
+            return res.status(403).json({ error: 'Your account is suspended. Please contact support.' });
+        }
+
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
         
@@ -126,6 +133,9 @@ router.post('/send-otp', async (req: Request, res: Response) => {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
             return res.status(404).json({ error: 'User not found. Please register first.' });
+        }
+        if (user.status === 'SUSPENDED') {
+            return res.status(403).json({ error: 'Your account is suspended. Please contact support.' });
         }
 
         // High Security: Restrict ADMIN login to a specific authorized email
@@ -165,6 +175,9 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
         if (!user || user.otp !== otp) {
             return res.status(401).json({ error: 'Invalid or expired OTP' });
         }
+        if (user.status === 'SUSPENDED') {
+            return res.status(403).json({ error: 'Your account is suspended. Please contact support.' });
+        }
 
         if (user.otpExpiry && new Date() > user.otpExpiry) {
             return res.status(401).json({ error: 'OTP has expired' });
@@ -174,6 +187,13 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
             where: { email },
             data: { otp: null, otpExpiry: null, isVerified: true } // Mark as verified on success
         });
+
+        // Send Welcome Email
+        try {
+            sendWelcomeEmail(email, user.name);
+        } catch (emailErr) {
+            console.error('Failed to send welcome email:', emailErr);
+        }
 
         const token = jwt.sign(
             { userId: user.id, role: user.role }, 
@@ -203,15 +223,15 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
     }
 });
 
-router.get('/drivers', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/sellers', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const drivers = await prisma.user.findMany({
-            where: { role: 'DRIVER' },
-            select: { id: true, name: true, email: true }
+        const sellers = await prisma.user.findMany({
+            where: { role: 'SELLER' },
+            select: { id: true, name: true, email: true, status: true, address: true, phone: true }
         });
-        res.json(drivers);
+        res.json(sellers);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch drivers' });
+        res.status(500).json({ error: 'Failed to fetch sellers' });
     }
 });
 
@@ -220,6 +240,9 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
         const { email } = req.body;
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return res.status(404).json({ error: 'User not found' });
+        if (user.status === 'SUSPENDED') {
+            return res.status(403).json({ error: 'Your account is suspended. Please contact support.' });
+        }
 
         const otp = generateOTP();
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);

@@ -2,19 +2,96 @@
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Sparkles, Moon, ShoppingBag, ArrowRight, Star, Heart, Clock, ShieldCheck, ChevronRight, Search } from 'lucide-react';
 import Link from 'next/link';
-import { products } from '@/data/products';
+import { products as staticProducts } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function Home() {
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  stock?: number;
+}
+
+function HomeContent() {
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  const queryParam = searchParams.get('q');
+
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const filteredProducts = products.filter(p => {
-    return p.title.toLowerCase().includes(searchQuery.toLowerCase());
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from the backend, fall back to static list on error
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        let url = 'http://localhost:5000/api/products';
+        const params = new URLSearchParams();
+        if (categoryParam) {
+          let mappedCategory = categoryParam.toUpperCase();
+          if (mappedCategory === 'CHOCOLATES') mappedCategory = 'CHOCOLATE';
+          if (mappedCategory === 'KEYCHAINS') mappedCategory = 'KEYCHAIN';
+          if (mappedCategory === 'WALLMOONS') mappedCategory = 'WALLMOON';
+          if (mappedCategory === 'THREADART') mappedCategory = 'THREAD_ART';
+          params.append('category', mappedCategory);
+        }
+        if (queryParam) {
+          params.append('search', queryParam);
+        }
+
+        const res = await fetch(`${url}?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Normalize imageUrl if backend returns relative path
+          const normalized = data.map((p: any) => ({
+            ...p,
+            imageUrl: p.imageUrl || '/images/chocolate.png'
+          }));
+          setProductsList(normalized);
+        } else {
+          throw new Error('Backend failed');
+        }
+      } catch (err) {
+        console.warn('API error, using static fallback:', err);
+        // Fallback filter
+        let fallback = staticProducts as Product[];
+        if (categoryParam) {
+          let mappedCategory = categoryParam.toUpperCase();
+          if (mappedCategory === 'CHOCOLATES') mappedCategory = 'CHOCOLATE';
+          if (mappedCategory === 'KEYCHAINS') mappedCategory = 'KEYCHAIN';
+          if (mappedCategory === 'WALLMOONS') mappedCategory = 'WALLMOON';
+          if (mappedCategory === 'THREADART') mappedCategory = 'THREAD_ART';
+          fallback = fallback.filter(p => p.category === mappedCategory);
+        }
+        if (queryParam) {
+          fallback = fallback.filter(p => 
+            p.title.toLowerCase().includes(queryParam.toLowerCase()) || 
+            p.description.toLowerCase().includes(queryParam.toLowerCase())
+          );
+        }
+        setProductsList(fallback);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [categoryParam, queryParam]);
+
+  // Live client-side search filtering on loaded products
+  const filteredProducts = productsList.filter(p => {
+    return p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
   });
 
   const containerVariants = {
@@ -100,7 +177,7 @@ export default function Home() {
             className="mb-4"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'var(--font-playfair)' }}>
-               {searchQuery ? 'Search Results' : 'Masterpieces'}
+               {queryParam || categoryParam || searchQuery ? 'Magic Catalog' : 'Masterpieces'}
             </h2>
             <motion.div 
               initial={{ width: 0 }}
@@ -113,8 +190,13 @@ export default function Home() {
         </div>
 
         <div className="w-full">
-          {searchQuery ? (
-            /* Search Results Grid */
+          {loading ? (
+            <div className="flex justify-center items-center py-20 text-yellow-500 text-lg">
+              <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+              Conjuring magical crafts...
+            </div>
+          ) : queryParam || categoryParam || searchQuery ? (
+            /* Search / Filter Results Grid */
             <motion.div 
               variants={containerVariants}
               initial="hidden"
@@ -135,29 +217,29 @@ export default function Home() {
               ))}
               {filteredProducts.length === 0 && (
                  <div className="col-span-full py-20 text-center">
-                    <p className="text-gray-500 text-lg">No magical items found matching your search.</p>
+                    <p className="text-gray-500 text-lg">No magical items found matching your filter.</p>
                  </div>
               )}
             </motion.div>
           ) : (
-            /* Categorized Horizontal Rows (Amazon Style) */
+            /* Categorized Rows */
             <div className="flex flex-col gap-16 px-4 md:px-8 overflow-hidden">
-               {['CHOCOLATE', 'KEYCHAIN', 'WALLMOON', 'THREAD_ART', 'OTHER'].map(category => {
-                  const categoryProducts = products.filter(p => p.category === category);
+               {['CHOCOLATE', 'KEYCHAIN', 'WALLMOON', 'THREAD_ART', 'OTHER'].map(cat => {
+                  const categoryProducts = productsList.filter(p => p.category === cat);
                   if (categoryProducts.length === 0) return null;
                   
-                  const displayTitle = category === 'WALLMOON' ? 'Enchanting Wall Moons' : 
-                                       category === 'THREAD_ART' ? 'Artisan Thread Art' : 
-                                       category === 'CHOCOLATE' ? 'Premium Chocolates' :
-                                       category === 'KEYCHAIN' ? 'Resin Keychains' : 'Other Artifacts';
+                  const displayTitle = cat === 'WALLMOON' ? 'Enchanting Wall Moons' : 
+                                       cat === 'THREAD_ART' ? 'Artisan Thread Art' : 
+                                       cat === 'CHOCOLATE' ? 'Premium Chocolates' :
+                                       cat === 'KEYCHAIN' ? 'Resin Keychains' : 'Other Artifacts';
 
                   return (
-                     <div key={category} className="w-full max-w-[100vw]">
+                     <div key={cat} className="w-full max-w-[100vw]">
                         <div className="flex items-center justify-between mb-6 px-4 md:px-8">
                            <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tighter" style={{ fontFamily: 'var(--font-playfair)' }}>
                               {displayTitle}
                            </h3>
-                           <span className="text-yellow-500 text-sm font-bold uppercase tracking-widest cursor-pointer hover:text-yellow-400">See All</span>
+                           <Link href={`/?category=${cat.toLowerCase()}s`} className="text-yellow-500 text-sm font-bold uppercase tracking-widest hover:text-yellow-400">See All</Link>
                         </div>
                         <div className="flex overflow-x-auto gap-6 pb-8 px-4 md:px-8 snap-x snap-mandatory hide-scrollbar">
                            {categoryProducts.map(p => (
@@ -206,5 +288,13 @@ export default function Home() {
       {/* Decorative Moon Background */}
       <div className="fixed top-0 right-0 -z-10 translate-x-1/3 -translate-y-1/3 w-[800px] h-[800px] border border-white/5 rounded-full blur-sm opacity-20 pointer-events-none" />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
